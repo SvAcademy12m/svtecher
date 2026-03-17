@@ -1,6 +1,9 @@
 # SVTECH Digital Technology (svtecher)
 
-Welcome to the SVTECH Digital Technology platform. This repository contains the source code for our modern, high-performance digital marketplace and training hub.
+**SVTECH Digital Technology** is a premium digital marketplace and tech hub designed for Ethiopia's growing technology landscape. The platform features high-performance multi-role dashboards, real-time analytics powered by Firebase, a comprehensive course marketplace, and a professional job board—all wrapped in a sleek, modern UI.
+
+## 🌟 Vision
+A professional digital ecosystem that integrates software acquisition, technical training, and career opportunities into a single, high-performance platform. Built for developers, students, and businesses scaling for the future.
 
 ## 🚀 Features
 
