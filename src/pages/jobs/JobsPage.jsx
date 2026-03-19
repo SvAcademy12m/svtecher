@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HiBriefcase, HiSearch, HiLocationMarker } from 'react-icons/hi';
 import { jobService } from '../../core/services/firestoreService';
+import { fadeUp } from '../../core/utils/animations';
 import JobCard from '../../components/cards/JobCard';
 import ApplicationModal from '../../components/ui/ApplicationModal';
 import Spinner from '../../components/ui/Spinner';
@@ -23,12 +24,6 @@ const FILTER_GRADIENTS = {
   'internship': 'from-purple-600 to-pink-700',
 };
 
-const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 },
-};
 
 const JobsPage = () => {
   const [jobs, setJobs] = useState([]);
@@ -38,8 +33,8 @@ const JobsPage = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const unsub = jobService.subscribe((data) => {
-      setJobs(data.filter(j => j.status === 'open'));
+    const unsub = jobService.getOpen((data) => {
+      setJobs(data);
       setLoading(false);
     });
     return () => unsub();

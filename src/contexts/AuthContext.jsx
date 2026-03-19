@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { subscribeToAuthChanges, getUserData } from '../core/services/authService';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { subscribeToAuthChanges, getUserData, logoutUser } from '../core/services/authService';
 import { ROLES } from '../core/utils/constants';
+import Spinner from '../components/ui/Spinner';
 
 const AuthContext = createContext(null);
 
@@ -10,8 +11,16 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Safety timer: if authentication doesn't respond in 10 seconds, force render
+    const safetyTimer = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth handshake timed out. Forcing ready state.');
+        setLoading(false);
+      }
+    }, 10000);
+
     const unsubscribe = subscribeToAuthChanges(async (firebaseUser) => {
-      setLoading(true);
+      clearTimeout(safetyTimer);
       if (firebaseUser) {
         setUser(firebaseUser);
         try {
@@ -26,13 +35,27 @@ export const AuthProvider = ({ children }) => {
       }
       setLoading(false);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(safetyTimer);
+    };
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await logoutUser();
+      setUser(null);
+      setUserData(null);
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   }, []);
 
   const value = {
     user,
     userData,
     loading,
+    logout,
     isAuthenticated: !!user,
     role: userData?.role || null,
     isAdmin: userData?.role === ROLES.ADMIN,
@@ -44,7 +67,11 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <Spinner fullScreen text="Establishing Secure Connection to SVTECH Node..." />
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

@@ -2,9 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiX, HiUpload, HiDocumentText, HiCheckCircle } from 'react-icons/hi';
 import { toast } from 'react-toastify';
+import { applicationService } from '../../core/services/firestoreService';
+import { uploadCV } from '../../core/services/storageService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ApplicationModal = ({ isOpen, onClose, job }) => {
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -21,21 +26,42 @@ const ApplicationModal = ({ isOpen, onClose, job }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user) {
+      toast.warning('Please sign in to submit your application.');
+      return;
+    }
     if (!formData.resume) {
       toast.error('Please upload your resume document.');
       return;
     }
     
-    // Simulate submission to email/SMS
-    setStep(2);
-    setTimeout(() => {
+    setLoading(true);
+    try {
+      // 1. Upload CV to Storage
+      const cvUrl = await uploadCV(user.uid, formData.resume);
+      
+      // 2. Add application to Firestore
+      await applicationService.add({
+        jobId: job.id,
+        jobTitle: job.title,
+        userId: user.uid,
+        userName: formData.fullName,
+        userEmail: formData.email,
+        userPhone: formData.phone,
+        coverLetter: formData.coverLetter,
+        cvUrl: cvUrl,
+      });
+
+      setStep(2);
       toast.success('Application submitted successfully!');
-      onClose();
-      setStep(1);
-      setFormData({ fullName: '', email: '', phone: '', coverLetter: '', resume: null });
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to submit application. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -155,9 +181,10 @@ const ApplicationModal = ({ isOpen, onClose, job }) => {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl text-white text-sm font-black tracking-widest uppercase hover:shadow-lg hover:shadow-blue-500/25 active:scale-95 transition-all"
+                    disabled={loading}
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl text-white text-sm font-black tracking-widest uppercase hover:shadow-lg hover:shadow-blue-500/25 disabled:opacity-50 active:scale-95 transition-all"
                   >
-                    Submit Application
+                    {loading ? 'TRANSMITTING...' : 'Submit Application'}
                   </button>
                 </div>
               </form>

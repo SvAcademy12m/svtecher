@@ -1,17 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  HiCode, HiDesktopComputer, HiAcademicCap, HiShieldCheck, HiChartBar,
-  HiGlobe, HiArrowRight, HiCheckCircle, HiLightBulb, HiCurrencyDollar
-} from 'react-icons/hi';
+import { HiCode, HiDesktopComputer, HiAcademicCap, HiShieldCheck, HiChartBar, HiGlobe, HiArrowRight, HiCheckCircle, HiLightBulb, HiCurrencyDollar } from 'react-icons/hi';
 import { FaRobot, FaCalculator } from 'react-icons/fa';
+import { fadeUp } from '../../core/utils/animations';
 
 const services = [
   {
     icon: HiCode,
     title: 'Web Development',
-    desc: 'Custom websites, web applications, e-commerce platforms, and CMS solutions built with React, Next.js, and Firebase.',
+    desc: 'CUSTOM WEBSITES, WEB APPLICATIONS, E-COMMERCE PLATFORMS, AND CMS SOLUTIONS BUILT WITH REACT, NEXT.JS, AND FIREBASE.',
     gradient: 'from-blue-600 to-indigo-700',
     shadow: 'shadow-blue-500/20',
     features: ['React / Next.js', 'Firebase & Node.js', 'E-commerce & CMS'],
@@ -20,7 +18,7 @@ const services = [
   {
     icon: HiDesktopComputer,
     title: 'Mobile Apps',
-    desc: 'Native and cross-platform mobile apps for iOS and Android with seamless, intuitive user experiences.',
+    desc: 'NATIVE AND CROSS-PLATFORM MOBILE APPS FOR IOS AND ANDROID WITH SEAMLESS, INTUITIVE USER EXPERIENCES.',
     gradient: 'from-cyan-500 to-blue-600',
     shadow: 'shadow-cyan-500/20',
     features: ['React Native', 'iOS & Android', 'Push Notifications'],
@@ -29,7 +27,7 @@ const services = [
   {
     icon: FaCalculator,
     title: 'Accounting Software',
-    desc: 'Ready-to-deploy accounting and business management systems built for Ethiopian businesses and enterprises.',
+    desc: 'READY-TO-DEPLOY ACCOUNTING AND BUSINESS MANAGEMENT SYSTEMS BUILT FOR ETHIOPIAN BUSINESSES AND ENTERPRISES.',
     gradient: 'from-emerald-500 to-teal-600',
     shadow: 'shadow-emerald-500/20',
     features: ['Invoicing & Reports', 'Payroll Management', 'Multi-currency (ETB/USD)'],
@@ -38,7 +36,7 @@ const services = [
   {
     icon: HiAcademicCap,
     title: 'Tech Training',
-    desc: 'Hands-on training in programming, design, networking, and cybersecurity with industry-certified instructors.',
+    desc: 'HANDS-ON TRAINING IN PROGRAMMING, DESIGN, NETWORKING, AND CYBERSECURITY WITH INDUSTRY-CERTIFIED INSTRUCTORS.',
     gradient: 'from-purple-600 to-pink-600',
     shadow: 'shadow-purple-500/20',
     features: ['Coding Bootcamps', 'Design & UI/UX', 'Certification Ready'],
@@ -47,7 +45,7 @@ const services = [
   {
     icon: HiShieldCheck,
     title: 'Cybersecurity',
-    desc: 'Network security audits, penetration testing, vulnerability assessments, and compliance consulting.',
+    desc: 'NETWORK SECURITY AUDITS, PENETRATION TESTING, VULNERABILITY ASSESSMENTS, AND COMPLIANCE CONSULTING.',
     gradient: 'from-red-600 to-rose-700',
     shadow: 'shadow-red-500/20',
     features: ['Pen Testing', 'Network Audit', 'Compliance Advisory'],
@@ -56,7 +54,7 @@ const services = [
   {
     icon: FaRobot,
     title: 'AI & Automation',
-    desc: 'AI-powered automation solutions, chatbots, data analytics, and machine learning integration for your business.',
+    desc: 'AI-POWERED AUTOMATION SOLUTIONS, CHATBOTS, DATA ANALYTICS, AND MACHINE LEARNING INTEGRATION FOR YOUR BUSINESS.',
     gradient: 'from-amber-500 to-orange-600',
     shadow: 'shadow-amber-500/20',
     features: ['AI Chatbots', 'Data Analytics', 'Workflow Automation'],
@@ -64,12 +62,6 @@ const services = [
   },
 ];
 
-const fadeUp = {
-  initial: { opacity: 0, y: 40 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-80px' },
-  transition: { duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] },
-};
 
 const ServicesPage = () => {
   const navigate = useNavigate();
@@ -90,9 +82,7 @@ const ServicesPage = () => {
           <motion.h1 {...fadeUp} transition={{ delay: 0.1 }} className="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 tracking-tighter leading-tight uppercase mb-8">
             What We <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600">Build</span>
           </motion.h1>
-          <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-slate-400 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-            From custom web & mobile development to accounting software, training programs, and AI automation — we deliver technology that drives real results.
-          </motion.p>
+            FROM CUSTOM WEB & MOBILE DEVELOPMENT TO ACCOUNTING SOFTWARE, TRAINING PROGRAMS, AND AI AUTOMATION — WE DELIVER TECHNOLOGY THAT DRIVES REAL RESULTS.
         </div>
       </section>
 

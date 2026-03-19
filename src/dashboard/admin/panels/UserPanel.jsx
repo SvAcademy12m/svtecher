@@ -44,6 +44,16 @@ const UserPanel = ({ users, filterRole = null, title = null }) => {
     }
   };
 
+  const toggleVerification = async (user) => {
+    const newStatus = !user.isVerified;
+    try {
+      await userService.update(user.id, { isVerified: newStatus });
+      toast.success(newStatus ? 'Profile Verified' : 'Verification Revoked');
+    } catch {
+      toast.error('Failed to update status');
+    }
+  };
+
   const updateRole = async (userId, newRole) => {
     try {
       await userService.update(userId, { role: newRole });
@@ -160,8 +170,8 @@ const UserPanel = ({ users, filterRole = null, title = null }) => {
                 <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Member Identity</th>
                 <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Access Credentials</th>
                 <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">System Role</th>
-                <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Account Status</th>
                 <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Registry Date</th>
+                <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Verification</th>
                 <th className="text-right p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Management</th>
               </tr>
             </thead>
@@ -220,6 +230,18 @@ const UserPanel = ({ users, filterRole = null, title = null }) => {
                        <p className="text-[13px] font-black text-blue-900 dark:text-indigo-200 tracking-tight">{user.createdAt ? new Date(user.createdAt?.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
                        <p className="text-[9px] font-black text-blue-400 dark:text-indigo-400/40 uppercase tracking-widest mt-0.5">Registration</p>
                     </div>
+                  </td>
+                  <td className="p-6 align-middle">
+                    <button 
+                      onClick={() => toggleVerification(user)}
+                      className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                        user.isVerified 
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                          : 'bg-white dark:bg-white/5 border-blue-100 dark:border-white/10 text-blue-900/40 dark:text-white/20 hover:border-blue-500 hover:text-blue-500'
+                      }`}
+                    >
+                      {user.isVerified ? 'VERIFIED' : 'PENDING'}
+                    </button>
                   </td>
                   <td className="p-6 align-middle">
                     <div className="flex items-center justify-end gap-2">

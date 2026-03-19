@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { HiPhone, HiMail, HiLocationMarker, HiArrowRight, HiCheckCircle } from 'react-icons/hi';
 import { FaTelegram, FaWhatsapp } from 'react-icons/fa';
 import { CONTACT_INFO } from '../../core/utils/constants';
+import { fadeUp } from '../../core/utils/animations';
 import { toast } from 'react-toastify';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../core/firebase/firebase';
@@ -13,12 +14,6 @@ const CONTACT_CARDS = [
   { icon: HiLocationMarker, label: 'Location', gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
 ];
 
-const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 },
-};
 
 const inputClass = "w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-600 focus:border-blue-500/50 focus:bg-white/8 outline-none transition-all font-medium";
 
@@ -63,11 +58,11 @@ const ContactPage = () => {
               <HiMail className="w-4 h-4 text-blue-400" />
               <span className="text-xs font-black text-blue-300 uppercase tracking-[0.3em]">Contact</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase leading-tight mb-6">
-              Let's <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Connect</span>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase leading-tight mb-6 italic">
+              LET'S <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">CONNECT</span>
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-              Have a project in mind? Want a free consultation? We're ready to help you build something exceptional.
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-black uppercase italic leading-relaxed">
+              HAVE A PROJECT IN MIND? WANT A FREE CONSULTATION? WE'RE READY TO HELP YOU BUILD SOMETHING EXCEPTIONAL.
             </p>
           </motion.div>
 
@@ -106,23 +101,23 @@ const ContactPage = () => {
             {/* Info Side */}
             <motion.div {...fadeUp} className="space-y-10">
               <div>
-                <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4">
-                  Response time: <span className="text-cyan-400">&lt; 24hrs</span>
+                <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4 italic">
+                  RESPONSE TIME: <span className="text-cyan-400">&lt; 24HRS</span>
                 </h2>
-                <p className="text-slate-400 font-medium leading-relaxed">
-                  We take every inquiry seriously. Whether it's a large enterprise project or a small web fix, our team responds promptly.
+                <p className="text-slate-400 font-black uppercase italic leading-relaxed">
+                  WE TAKE EVERY INQUIRY SERIOUSLY. WHETHER IT'S A LARGE ENTERPRISE PROJECT OR A SMALL WEB FIX, OUR TEAM RESPONDS PROMPTLY.
                 </p>
               </div>
 
               <div className="space-y-4">
                 {[
-                  'Free initial consultation',
-                  'Detailed project proposal & timeline',
-                  'Transparent pricing — no hidden fees',
-                  'Dedicated project manager',
-                  'Post-launch support included',
+                  'FREE INITIAL CONSULTATION',
+                  'DETAILED PROJECT PROPOSAL & TIMELINE',
+                  'TRANSPARENT PRICING — NO HIDDEN FEES',
+                  'DEDICATED PROJECT MANAGER',
+                  'POST-LAUNCH SUPPORT INCLUDED',
                 ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 text-slate-300 font-medium">
+                  <div key={i} className="flex items-center gap-3 text-white font-black uppercase text-[10px] tracking-widest">
                     <HiCheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0" />
                     {item}
                   </div>
@@ -138,14 +133,14 @@ const ContactPage = () => {
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-black text-xs uppercase tracking-widest hover:bg-blue-500/20 transition-all"
                   >
-                    <FaTelegram className="w-5 h-5" /> Telegram
+                    <FaTelegram className="w-5 h-5" /> TELEGRAM CHANNEL
                   </a>
                   <a
                     href={CONTACT_INFO.whatsapp}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs uppercase tracking-widest hover:bg-emerald-500/20 transition-all"
                   >
-                    <FaWhatsapp className="w-5 h-5" /> WhatsApp
+                    <FaWhatsapp className="w-5 h-5" /> WHATSAPP DIRECT
                   </a>
                 </div>
               </div>

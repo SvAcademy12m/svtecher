@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiHome, HiBookOpen, HiUsers, HiCurrencyDollar, HiLogout, HiMenu, HiX, HiVideoCamera, HiChatAlt2 } from 'react-icons/hi';
+import { HiHome, HiBookOpen, HiUserGroup, HiCurrencyDollar, HiLogout, HiMenu, HiX, HiVideoCamera, HiChatAlt2 } from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { logoutUser } from '../../core/services/authService';
@@ -18,7 +18,7 @@ const TrainerDashboard = () => {
       items: [
         { key: 'overview', label: 'Overview', icon: HiHome },
         { key: 'my-courses', label: 'My Courses', icon: HiBookOpen },
-        { key: 'students', label: 'My Students', icon: HiUsers },
+        { key: 'students', label: 'My Students', icon: HiUserGroup },
       ]
     },
     {
@@ -89,8 +89,8 @@ const TrainerDashboard = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <aside className="hidden lg:flex w-[240px] flex-col flex-shrink-0">
+    <div className="flex min-h-[calc(100vh-80px)] mt-20 bg-slate-50">
+      <aside className="hidden lg:flex w-[240px] flex-col flex-shrink-0 sticky top-20 h-[calc(100vh-80px)] border-r border-slate-200">
         <SidebarContent />
       </aside>
 
@@ -106,8 +106,16 @@ const TrainerDashboard = () => {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 bg-white border-b border-slate-100 px-4 lg:px-6 flex items-center justify-between flex-shrink-0">
+      {/* Mobile Sidebar Floating Action Button (FAB) */}
+      <button 
+        onClick={() => setMobileSidebarOpen(true)}
+        className="lg:hidden fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-xl shadow-purple-500/30 active:scale-90 transition-all"
+      >
+        <HiMenu className="w-6 h-6" />
+      </button>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="sticky top-20 h-14 bg-white border-b border-slate-100 px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-20">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
               <HiMenu className="w-5 h-5" />
@@ -116,7 +124,7 @@ const TrainerDashboard = () => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-slate-50">
+        <main className="flex-1 p-4 lg:p-6 bg-slate-50">
           {activePanel === 'overview' && (
             <div className="space-y-6">
               <h3 className="text-2xl font-black text-slate-900">Instructor Dashboard</h3>
@@ -130,7 +138,7 @@ const TrainerDashboard = () => {
                 </div>
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                   <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center mb-4">
-                    <HiUsers className="w-5 h-5 text-slate-400" />
+                    <HiUserGroup className="w-5 h-5 text-slate-400" />
                   </div>
                   <p className="text-3xl font-black text-slate-900">0</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Total Students</p>

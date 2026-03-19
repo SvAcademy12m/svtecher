@@ -1,11 +1,17 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { HiGlobe, HiDeviceMobile, HiExternalLink, HiShoppingCart, HiArrowSmRight } from 'react-icons/hi';
+import { HiGlobe, HiDeviceMobile, HiShoppingCart, HiArrowSmRight, HiFire, HiLocationMarker, HiGlobeAlt } from 'react-icons/hi';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'react-toastify';
 import Badge from '../ui/Badge';
+import SocialActionBar from '../ui/SocialActionBar';
 
 const ProductCard = ({ product }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { formatPrice, formatDualPrice } = useCurrency();
   const { t } = useLanguage();
 
@@ -78,7 +84,7 @@ const ProductCard = ({ product }) => {
         </div>
 
         {/* Pricing & CTA */}
-        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
+        <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between mb-6">
           <div>
             <p className="text-xl font-black text-white leading-none">
               {formatPrice(product.price)}
@@ -88,10 +94,50 @@ const ProductCard = ({ product }) => {
             </p>
           </div>
           
-          <button className="flex items-center gap-2 px-6 py-3 bg-white/10 border border-white/20 text-white rounded-2xl text-[11px] font-black uppercase tracking-wider hover:bg-white/20 transition-all shadow-xl active:scale-95">
-             Buy Asset <HiArrowSmRight className="w-4 h-4" />
+          <button 
+            onClick={() => {
+              if (!user) {
+                navigate('/register', { state: { defaultRole: 'customer', returnUrl: '/services' } });
+              } else {
+                toast.info("Purchase protocol initialized. Our sales team will contact you!");
+              }
+            }}
+            className="flex items-center gap-2 px-6 py-3 bg-white text-slate-900 rounded-2xl text-[11px] font-black uppercase tracking-wider hover:bg-cyan-400 hover:text-white transition-all shadow-xl active:scale-95"
+          >
+             {(!user) ? 'SIGN UP BUYER' : 'PURCHASE ASSET'} <HiArrowSmRight className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Contact Actions */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <a
+            href="tel:+251911234567"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all group"
+          >
+            <HiFire className="w-4 h-4 mb-1 group-hover:text-emerald-400 opacity-70 group-hover:opacity-100" />
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">Call</span>
+          </a>
+          <a
+            href="sms:+251911234567"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all group"
+          >
+            <HiLocationMarker className="w-4 h-4 mb-1 group-hover:text-blue-400 opacity-70 group-hover:opacity-100" />
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">SMS</span>
+          </a>
+          <a
+            href="mailto:contact@svtecher.com"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center justify-center py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white transition-all group"
+          >
+            <HiGlobeAlt className="w-4 h-4 mb-1 group-hover:text-amber-400 opacity-70 group-hover:opacity-100" />
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">Email</span>
+          </a>
+        </div>
+
+        {/* Social Features */}
+        <SocialActionBar item={product} type="product" />
       </div>
     </motion.div>
   );

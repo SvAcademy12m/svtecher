@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HiThumbUp, HiOutlineThumbUp, HiThumbDown, HiOutlineThumbDown, HiChatAlt2, HiOutlineChatAlt2, HiUserAdd, HiCheck } from 'react-icons/hi';
+import { HiThumbUp, HiThumbDown, HiChatAlt2, HiUserAdd, HiCheck } from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -63,7 +63,7 @@ const SocialActionBar = ({ item, type = 'post' }) => {
           onClick={(e) => handleAction(e, 'like')}
           className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${hasLiked ? 'text-blue-500' : 'hover:text-blue-400'}`}
         >
-          {hasLiked ? <HiThumbUp className="w-4 h-4" /> : <HiOutlineThumbUp className="w-4 h-4" />}
+          {hasLiked ? <HiThumbUp className="w-4 h-4" /> : <HiThumbUp className="w-4 h-4 opacity-50" />}
           {likes > 0 && <span>{likes}</span>}
         </motion.button>
 
@@ -73,7 +73,7 @@ const SocialActionBar = ({ item, type = 'post' }) => {
           onClick={(e) => handleAction(e, 'dislike')}
           className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${hasDisliked ? 'text-rose-500' : 'hover:text-rose-400'}`}
         >
-          {hasDisliked ? <HiThumbDown className="w-4 h-4" /> : <HiOutlineThumbDown className="w-4 h-4" />}
+          {hasDisliked ? <HiThumbDown className="w-4 h-4" /> : <HiThumbDown className="w-4 h-4 opacity-50" />}
           {dislikes > 0 && <span>{dislikes}</span>}
         </motion.button>
 
@@ -83,7 +83,7 @@ const SocialActionBar = ({ item, type = 'post' }) => {
           onClick={(e) => handleAction(e, 'comment')}
           className="flex items-center gap-1.5 text-xs font-bold hover:text-cyan-400 transition-colors"
         >
-          <HiOutlineChatAlt2 className="w-4 h-4" />
+          <HiChatAlt2 className="w-4 h-4 opacity-50" />
           {comments > 0 && <span>{comments}</span>}
         </motion.button>
       </div>

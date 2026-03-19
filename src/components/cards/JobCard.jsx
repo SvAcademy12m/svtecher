@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiLocationMarker, HiClock, HiBriefcase, HiCurrencyDollar, HiArrowRight, HiFire } from 'react-icons/hi';
+import { HiLocationMarker, HiClock, HiBriefcase, HiCurrencyDollar, HiArrowRight, HiFire, HiGlobeAlt } from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
 import SocialActionBar from '../ui/SocialActionBar';
 
@@ -21,57 +21,60 @@ const JobCard = ({ job, onApply, showActions = false }) => {
   return (
     <motion.div
       whileHover={{ y: -8, scale: 1.01 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       onClick={() => navigate('/jobs')}
-      className="group relative rounded-[2.5rem] overflow-hidden bg-gradient-to-br from-blue-700 to-indigo-900 border border-white/10 shadow-2xl cursor-pointer"
+      className="group relative rounded-[3rem] overflow-hidden bg-gradient-to-br from-blue-700 to-indigo-950 border border-white/10 shadow-[0_20px_50px_-15px_rgba(30,58,138,0.4)] cursor-pointer"
     >
-      {/* Top Gradient Accent */}
-      <div className={`h-1.5 w-full bg-gradient-to-r ${style.gradient}`} />
+      {/* Visual Header Accent */}
+      <div className={`h-2 w-full bg-gradient-to-r ${style.gradient} shadow-[0_0_20px_rgba(59,130,246,0.3)]`} />
 
-      <div className="p-7">
-        {/* Header Row */}
-        <div className="flex items-start justify-between gap-4 mb-5">
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${style.gradient} flex items-center justify-center flex-shrink-0 shadow-xl transform group-hover:rotate-6 transition-transform`}>
-            <HiBriefcase className="w-7 h-7 text-white" />
+      <div className="p-8">
+        {/* Header Section */}
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div className={`w-16 h-16 rounded-[1.5rem] bg-gradient-to-br ${style.gradient} flex items-center justify-center flex-shrink-0 shadow-2xl transform group-hover:rotate-6 transition-transform duration-500 border border-white/20`}>
+            <HiBriefcase className="w-8 h-8 text-white" />
           </div>
-          <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full bg-gradient-to-r ${style.gradient} text-white shadow-lg`}>
-            {style.badge}
+          <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 text-white shadow-xl`}>
+            {style.badge?.toUpperCase() || 'OPEN'}
           </span>
         </div>
 
-        <h3 className="text-xl font-black text-white uppercase tracking-tight leading-snug mb-1 group-hover:text-cyan-300 transition-colors line-clamp-2">
-          {job.title}
-        </h3>
+        <div className="flex items-center gap-2 mb-2">
+           <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors">
+            {job.title}
+          </h3>
+          {job.isVerified && (
+             <div className="p-1 rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/20" title="Official Verified Partnership">
+                <HiFire className="w-3 h-3" />
+             </div>
+          )}
+        </div>
         {job.company && (
-          <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-4">{job.company}</p>
+          <p className="text-[10px] font-black text-blue-300 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            {job.company?.toUpperCase()}
+          </p>
         )}
 
-        <p className="text-sm text-blue-100/70 line-clamp-3 leading-relaxed mb-6 font-black uppercase italic">
+        <p className="text-[13px] text-blue-100/60 line-clamp-3 leading-relaxed mb-8 font-bold uppercase tracking-tight italic">
           "{job.description}"
         </p>
 
-        {/* Meta Info */}
-        <div className="flex flex-wrap gap-4 mb-6">
+        {/* Global Meta Info */}
+        <div className="flex flex-wrap gap-4 mb-8 pb-8 border-b border-white/5">
           {job.location && (
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-blue-200 uppercase tracking-widest">
-              <HiLocationMarker className="w-4 h-4 text-cyan-400" /> {job.location}
+            <span className="flex items-center gap-2 text-[9px] font-black text-blue-200 uppercase tracking-widest">
+              <div className="p-1.5 rounded-lg bg-white/5 border border-white/10"><HiLocationMarker className="w-3 h-3 text-cyan-400" /></div> {job.location?.toUpperCase()}
             </span>
           )}
           {job.salary && (
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-blue-200 uppercase tracking-widest">
-              <HiCurrencyDollar className="w-4 h-4 text-cyan-400" /> {job.salary}
-            </span>
-          )}
-          {job.deadline && (
-            <span className="flex items-center gap-1.5 text-[10px] font-black text-blue-200 uppercase tracking-widest">
-              <HiClock className="w-4 h-4 text-cyan-400" /> {job.deadline}
+            <span className="flex items-center gap-2 text-[9px] font-black text-white uppercase tracking-widest bg-emerald-500/10 px-3 py-2 rounded-xl border border-emerald-500/20">
+              <HiCurrencyDollar className="w-4 h-4 text-emerald-400" /> {job.salary?.toUpperCase()}
             </span>
           )}
         </div>
 
-        <SocialActionBar item={job} type="job" />
-
-        {/* CTA Button */}
+        {/* Action Button */}
         <button
           onClick={(e) => { 
             e.stopPropagation(); 
@@ -81,14 +84,48 @@ const JobCard = ({ job, onApply, showActions = false }) => {
               onApply ? onApply(job) : navigate('/jobs'); 
             }
           }}
-          className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-white/10 border border-white/20 text-white text-xs font-black uppercase tracking-widest hover:bg-white/20 transition-all group/btn"
+          className="flex items-center justify-center gap-3 w-full py-5 rounded-[1.5rem] bg-white text-blue-900 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-cyan-400 hover:text-white transition-all transform active:scale-95 shadow-2xl mb-4"
         >
-          {showActions ? (
-            <><HiFire className="w-4 h-4 text-orange-400" /> Apply Now</>
+          {/* Dynamic Registration/Action Button completely aligned with PWA flow */}
+          {(!user) ? (
+            <>SIGN UP ACCOUNT <HiArrowRight className="w-4 h-4 text-blue-500" /></>
+          ) : showActions ? (
+            <>INITIALIZE APPLICATION <HiFire className="w-4 h-4 text-orange-500" /></>
           ) : (
-            <>View Job <HiArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" /></>
+            <>VIEW DETAILS <HiArrowRight className="w-4 h-4" /></>
           )}
         </button>
+
+        {/* Contact Actions */}
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <a
+            href="tel:+251911234567"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center justify-center py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white transition-all group"
+          >
+            <HiFire className="w-4 h-4 mb-1 group-hover:text-emerald-400 opacity-70 group-hover:opacity-100" />
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">Call</span>
+          </a>
+          <a
+            href="sms:+251911234567"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center justify-center py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white transition-all group"
+          >
+            <HiLocationMarker className="w-4 h-4 mb-1 group-hover:text-blue-400 opacity-70 group-hover:opacity-100" />
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">SMS</span>
+          </a>
+          <a
+            href="mailto:contact@svtecher.com"
+            onClick={(e) => e.stopPropagation()}
+            className="flex flex-col items-center justify-center py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white transition-all group"
+          >
+            <HiGlobeAlt className="w-4 h-4 mb-1 group-hover:text-amber-400 opacity-70 group-hover:opacity-100" />
+            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 group-hover:opacity-100">Email</span>
+          </a>
+        </div>
+
+        {/* Social Features */}
+        <SocialActionBar item={job} type="job" />
       </div>
     </motion.div>
   );

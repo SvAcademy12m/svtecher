@@ -18,11 +18,13 @@ const HomePage = lazy(() => import('./pages/home/HomePage'));
 const CoursesPage = lazy(() => import('./pages/courses/CoursesPage'));
 const JobsPage = lazy(() => import('./pages/jobs/JobsPage'));
 const BlogPage = lazy(() => import('./pages/blog/BlogPage'));
+const PostPage = lazy(() => import('./pages/blog/PostPage'));
 const ServicesPage = lazy(() => import('./pages/services/ServicesPage'));
 const AboutPage = lazy(() => import('./pages/about/AboutPage'));
 const ContactPage = lazy(() => import('./pages/contact/ContactPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
 
 // Lazy load dashboards
 const AdminDashboard = lazy(() => import('./dashboard/admin/AdminDashboard'));
@@ -41,67 +43,73 @@ const App = () => {
             <AuthProvider>
               <Suspense fallback={<Spinner fullScreen />}>
               <Routes>
-                {/* Public layout */}
+                {/* Everything wrapped in AppLayout for Progressive Web App unification */}
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/services" element={<ServicesPage />} />
                   <Route path="/courses" element={<CoursesPage />} />
                   <Route path="/jobs" element={<JobsPage />} />
                   <Route path="/blog" element={<BlogPage />} />
+                  <Route path="/blog/:id" element={<PostPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Auth */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/signup" element={<RegisterPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  
+                  {/* Role redirect */}
+                  <Route path="/redirect" element={<RoleRedirect />} />
+                  <Route path="/dashboard" element={<RoleRedirect />} />
+
+                  {/* Protected dashboards */}
+                  <Route
+                    path="/dashboard/admin"
+                    element={
+                      <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/student"
+                    element={
+                      <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+                        <StudentDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/jobs"
+                    element={
+                      <ProtectedRoute allowedRoles={[ROLES.JOB_FINDER]}>
+                        <JobFinderDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/trainer"
+                    element={
+                      <ProtectedRoute allowedRoles={[ROLES.TRAINER]}>
+                        <TrainerDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/dashboard/customer"
+                    element={
+                      <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+                        <CustomerDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
                 </Route>
-
-                {/* Auth */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-
-                {/* Role redirect */}
-                <Route path="/redirect" element={<RoleRedirect />} />
-                <Route path="/dashboard" element={<RoleRedirect />} />
-
-                {/* Protected dashboards */}
-                <Route
-                  path="/dashboard/admin"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                      <AdminDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/student"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-                      <StudentDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/jobs"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.JOB_FINDER]}>
-                      <JobFinderDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/trainer"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.TRAINER]}>
-                      <TrainerDashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard/customer"
-                  element={
-                    <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
-                      <CustomerDashboard />
-                    </ProtectedRoute>
-                  }
-                />
               </Routes>
             </Suspense>
 

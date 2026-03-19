@@ -12,6 +12,9 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { auth } from '../../../core/firebase/firebase';
 import { updatePassword } from 'firebase/auth';
 
+import { systemService } from '../../../core/services/firestoreService';
+import { useEffect } from 'react';
+
 const SettingsPanel = () => {
   const { lang, setLanguage, t } = useLanguage();
   const { currency, setCurrency } = useCurrency();
@@ -20,7 +23,20 @@ const SettingsPanel = () => {
   
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   const [loading, setLoading] = useState(false);
-  const [isMaintenance, setIsMaintenance] = useState(false);
+  const [settings, setSettings] = useState({ isMaintenance: false });
+
+  useEffect(() => {
+    return systemService.subscribe(setSettings);
+  }, []);
+
+  const toggleMaintenance = async () => {
+    try {
+      await systemService.update({ isMaintenance: !settings.isMaintenance });
+      toast.success(`Production state updated!`);
+    } catch {
+      toast.error("Failed to sync production state.");
+    }
+  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
@@ -47,9 +63,9 @@ const SettingsPanel = () => {
           <p className="text-sm font-black text-blue-600/50 dark:text-indigo-400/50 uppercase tracking-widest mt-1">System Control & Security</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-3 transition-all ${isMaintenance ? 'border-rose-500 bg-rose-500/5 text-rose-600' : 'border-emerald-500 bg-emerald-500/5 text-emerald-600'}`}>
-             <div className={`w-2 h-2 rounded-full ${isMaintenance ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 shadow-[0_0_10px_#10b981]'}`} />
-             <span className="text-[10px] font-black uppercase tracking-widest">{isMaintenance ? 'Maintenance Mode Active' : 'Front End Live'}</span>
+          <div className={`px-4 py-2 rounded-2xl border-2 flex items-center gap-3 transition-all ${settings.isMaintenance ? 'border-rose-500 bg-rose-500/5 text-rose-600' : 'border-emerald-500 bg-emerald-500/5 text-emerald-600'}`}>
+             <div className={`w-2 h-2 rounded-full ${settings.isMaintenance ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 shadow-[0_0_10px_#10b981]'}`} />
+             <span className="text-[10px] font-black uppercase tracking-widest">{settings.isMaintenance ? 'Maintenance Mode Active' : 'Front End Live'}</span>
           </div>
         </div>
       </div>
@@ -112,7 +128,7 @@ const SettingsPanel = () => {
                  { label: 'API Gateway', status: 'Optimal', icon: HiStatusOnline, color: 'text-emerald-500' },
                  { label: 'Database Latency', status: '12ms', icon: HiLightningBolt, color: 'text-blue-500' },
                  { label: 'Security Firewall', status: 'Active', icon: HiShieldCheck, color: 'text-indigo-500' },
-                 { label: 'Maintenance Mode', status: isMaintenance ? 'OFFLINE' : 'ONLINE', icon: HiExclamation, color: isMaintenance ? 'text-rose-500' : 'text-emerald-500', toggle: true }
+                 { label: 'Maintenance Mode', status: settings.isMaintenance ? 'OFFLINE' : 'ONLINE', icon: HiExclamation, color: settings.isMaintenance ? 'text-rose-500' : 'text-emerald-500', toggle: true }
                ].map((item, i) => (
                  <div key={i} className="flex items-center justify-between p-4 rounded-3xl bg-blue-50/50 dark:bg-white/5 border border-blue-100/30 dark:border-white/5">
                     <div className="flex items-center gap-4">
@@ -121,8 +137,8 @@ const SettingsPanel = () => {
                     </div>
                     {item.toggle ? (
                       <button 
-                        onClick={() => setIsMaintenance(!isMaintenance)}
-                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isMaintenance ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}
+                        onClick={toggleMaintenance}
+                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${settings.isMaintenance ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}
                       >
                         {item.status}
                       </button>
@@ -192,24 +208,24 @@ const SettingsPanel = () => {
           <div className="bg-gradient-to-br from-slate-900 to-blue-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group">
              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
              <div className="relative z-10 flex flex-col items-center text-center">
-                <div className={`p-6 rounded-[2.5rem] mb-6 border-2 transition-all duration-700 ${isMaintenance ? 'bg-rose-500/20 border-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.3)]' : 'bg-emerald-500/20 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]'}`}>
-                   <HiEyeOff className={`w-12 h-12 ${isMaintenance ? 'text-rose-500' : 'text-emerald-500'}`} />
+                <div className={`p-6 rounded-[2.5rem] mb-6 border-2 transition-all duration-700 ${settings.isMaintenance ? 'bg-rose-500/20 border-rose-500 shadow-[0_0_50px_rgba(244,63,94,0.3)]' : 'bg-emerald-500/20 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.3)]'}`}>
+                   <HiEyeOff className={`w-12 h-12 ${settings.isMaintenance ? 'text-rose-500' : 'text-emerald-500'}`} />
                 </div>
                 <h4 className="text-2xl font-black uppercase tracking-tight mb-2">GateKeeper Console</h4>
                 <p className="text-sm font-black text-blue-200/50 uppercase tracking-widest mb-8">Manage Public Site Visibility</p>
                 
                 <button
-                  onClick={() => setIsMaintenance(!isMaintenance)}
+                  onClick={toggleMaintenance}
                    className={`px-12 py-5 rounded-[2rem] font-black uppercase tracking-[0.3em] text-[11px] transition-all shadow-2xl ${
-                     isMaintenance 
+                     settings.isMaintenance 
                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/40' 
                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/40'
                    }`}
                 >
-                  {isMaintenance ? 'Open Front Display' : 'Close Front Display'}
+                  {settings.isMaintenance ? 'Open Front Display' : 'Close Front Display'}
                 </button>
                 <p className="mt-6 text-[10px] font-black text-blue-200/30 uppercase tracking-[0.2em]">
-                  {isMaintenance ? 'Front end is currently restricted to admins only' : 'Front end is publically accessible'}
+                  {settings.isMaintenance ? 'Front end is currently restricted to admins only' : 'Front end is publically accessible'}
                 </p>
              </div>
           </div>

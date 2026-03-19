@@ -8,13 +8,15 @@ import { toast } from 'react-toastify';
 import Button from '../../../components/ui/Button';
 import Modal from '../../../components/ui/Modal';
 import Badge from '../../../components/ui/Badge';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 const initialForm = {
   title: '', description: '', price: '', duration: '', level: 'beginner',
-  instructor: '', category: 'accounting', thumbnail: '', videoUrl: '', materials: '', status: 'published',
+  instructor: '', category: 'accounting', thumbnail: '', videoUrl: '', materials: '', status: 'published', isVerified: false,
 };
 
 const CoursePanel = ({ courses }) => {
+  const { t } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [editId, setEditId] = useState(null);
@@ -45,7 +47,7 @@ const CoursePanel = ({ courses }) => {
   };
 
   const editCourse = (c) => {
-    setForm({ title: c.title, description: c.description, price: c.price || '', duration: c.duration || '', level: c.level || 'beginner', instructor: c.instructor || '', category: c.category || 'development', thumbnail: c.thumbnail || '', videoUrl: c.videoUrl || '', materials: c.materials || '', status: c.status || 'published' });
+    setForm({ title: c.title, description: c.description, price: c.price || '', duration: c.duration || '', level: c.level || 'beginner', instructor: c.instructor || '', category: c.category || 'development', thumbnail: c.thumbnail || '', videoUrl: c.videoUrl || '', materials: c.materials || '', status: c.status || 'published', isVerified: !!c.isVerified });
     setEditId(c.id);
     setShowForm(true);
   };
@@ -96,7 +98,10 @@ const CoursePanel = ({ courses }) => {
                      <span className="text-xs font-black text-blue-900/40 dark:text-indigo-200/40 uppercase tracking-widest">{c.duration} Curriculum</span>
                   </div>
                 </div>
-                <Badge variant={c.status === 'published' ? 'success' : 'warning'} className="!px-4 !py-1.5 !rounded-xl !text-[9px] !font-black !uppercase !tracking-widest shadow-lg">{c.status || 'published'}</Badge>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge variant={c.status === 'published' ? 'success' : 'warning'} className="!px-4 !py-1.5 !rounded-xl !text-[9px] !font-black !uppercase !tracking-widest shadow-lg">{c.status || 'published'}</Badge>
+                  {c.isVerified && <Badge variant="info" className="!px-3 !py-1 !rounded-lg !text-[8px] !font-black !uppercase !tracking-[0.2em] shadow-blue-500/20">VERIFIED OFFICIAL</Badge>}
+                </div>
               </div>
 
               <div className="p-6 bg-blue-50/50 dark:bg-black/20 rounded-3xl border border-blue-100 dark:border-white/5 mb-8">
@@ -171,6 +176,16 @@ const CoursePanel = ({ courses }) => {
           <input name="thumbnail" value={form.thumbnail} onChange={handleChange} className="input-field" placeholder="Thumbnail URL" />
           <input name="videoUrl" value={form.videoUrl} onChange={handleChange} className="input-field" placeholder="Video URL" />
           <input name="materials" value={form.materials} onChange={handleChange} className="input-field" placeholder="Materials URL" />
+          <div className="flex items-center gap-3 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+             <input 
+               type="checkbox" 
+               name="isVerified" 
+               checked={form.isVerified} 
+               onChange={(e) => setForm(prev => ({ ...prev, isVerified: e.target.checked }))}
+               className="w-5 h-5 rounded-lg border-blue-300 text-blue-600 focus:ring-blue-500"
+             />
+             <label className="text-[11px] font-black uppercase tracking-widest text-blue-900">Official SVTECH Verification Badge</label>
+          </div>
           <Button type="submit" variant="primary" size="lg" className="w-full" loading={loading}>
             {editId ? 'Update Course' : 'Create Course'}
           </Button>

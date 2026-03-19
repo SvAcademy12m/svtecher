@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiHome, HiBriefcase, HiDocumentText, HiMail, HiLogout, HiMenu, HiX, HiOfficeBuilding, HiCheckCircle, HiStar } from 'react-icons/hi';
+import { HiHome, HiBriefcase, HiDocumentText, HiMail, HiLogout, HiMenu, HiX, HiOfficeBuilding, HiCheckCircle, HiStar, HiUserGroup, HiLink } from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { logoutUser } from '../../core/services/authService';
@@ -100,9 +100,9 @@ const JobFinderDashboard = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex min-h-[calc(100vh-80px)] mt-20 bg-slate-50">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-[240px] flex-col flex-shrink-0">
+      <aside className="hidden lg:flex w-[240px] flex-col flex-shrink-0 sticky top-20 h-[calc(100vh-80px)] border-r border-slate-200">
         <SidebarContent />
       </aside>
 
@@ -119,9 +119,17 @@ const JobFinderDashboard = () => {
         </div>
       )}
 
+      {/* Mobile Sidebar Floating Action Button (FAB) */}
+      <button 
+        onClick={() => setMobileSidebarOpen(true)}
+        className="lg:hidden fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xl shadow-amber-500/30 active:scale-90 transition-all"
+      >
+        <HiMenu className="w-6 h-6" />
+      </button>
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 bg-white border-b border-slate-100 px-4 lg:px-6 flex items-center justify-between flex-shrink-0">
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="sticky top-20 h-14 bg-white border-b border-slate-100 px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-20">
           <div className="flex items-center gap-3">
             <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
               <HiMenu className="w-5 h-5" />
@@ -133,7 +141,7 @@ const JobFinderDashboard = () => {
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-slate-50">
+        <main className="flex-1 p-4 lg:p-6 bg-slate-50">
           {activePanel === 'overview' && (
             <div className="space-y-6">
               <h3 className="text-2xl font-black text-slate-900">Career Dashboard</h3>
@@ -154,7 +162,7 @@ const JobFinderDashboard = () => {
                 </div>
                 <div className="bg-white rounded-2xl border border-slate-100 p-4 md:p-5 shadow-sm">
                   <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
-                    <HiUsers className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
+                    <HiUserGroup className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
                   </div>
                   <p className="text-2xl md:text-3xl font-black text-slate-900">89</p>
                   <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Followers</p>

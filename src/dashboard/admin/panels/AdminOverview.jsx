@@ -1,10 +1,10 @@
 import React from 'react';
-import { HiUsers, HiAcademicCap, HiBriefcase, HiNewspaper, HiDocumentText, HiCash, HiTrendingUp, HiShoppingCart, HiSwitchHorizontal } from 'react-icons/hi';
+import { HiUserGroup, HiAcademicCap, HiBriefcase, HiNewspaper, HiDocumentText, HiCash, HiTrendingUp, HiShoppingCart, HiSwitchHorizontal, HiHome } from 'react-icons/hi';
 import { ROLES, ROLE_LABELS } from '../../../core/utils/constants';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 
-const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
+const AdminOverview = ({ users, courses, jobs, posts, applications, onSwitchPanel }) => {
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
 
@@ -40,14 +40,48 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
         </div>
       </div>
 
+      {/* Quick Launch Portal */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-between group no-underline">
+           <div>
+              <p className="text-[10px] font-black text-blue-200 uppercase tracking-[0.3em] mb-1">Public Access</p>
+              <h4 className="text-xl font-black uppercase italic tracking-tighter">View Live Home</h4>
+           </div>
+           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg">
+              <HiHome className="w-6 h-6" />
+           </div>
+        </a>
+        <a href="/services" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl shadow-cyan-500/20 hover:scale-[1.02] transition-all flex items-center justify-between group no-underline">
+           <div>
+              <p className="text-[10px] font-black text-blue-100 uppercase tracking-[0.3em] mb-1">Marketplace</p>
+              <h4 className="text-xl font-black uppercase italic tracking-tighter">View Services</h4>
+           </div>
+           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg">
+              <HiShoppingCart className="w-6 h-6" />
+           </div>
+        </a>
+        <a href="/courses" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 text-white shadow-xl shadow-purple-500/20 hover:scale-[1.02] transition-all flex items-center justify-between group no-underline">
+           <div>
+              <p className="text-[10px] font-black text-purple-200 uppercase tracking-[0.3em] mb-1">Academy</p>
+              <h4 className="text-xl font-black uppercase italic tracking-tighter">View Courses</h4>
+           </div>
+           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg">
+              <HiAcademicCap className="w-6 h-6" />
+           </div>
+        </a>
+      </div>
+
       {/* Main Stat Cards - Advanced */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Row 1: Core Platform Stats */}
-        <div className="bg-gradient-to-br from-blue-700 via-indigo-700 to-indigo-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('all-users')}
+          className="bg-gradient-to-br from-blue-700 via-indigo-700 to-indigo-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiUsers className="w-6 h-6 text-blue-100" />
+              <HiUserGroup className="w-6 h-6 text-blue-100" />
             </div>
             <HiTrendingUp className="w-5 h-5 text-emerald-400" />
           </div>
@@ -55,7 +89,10 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
           <p className="text-[11px] font-black text-blue-200/60 uppercase tracking-[0.2em]">{t('totalUsers')}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-cyan-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('courses')}
+          className="bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-cyan-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
@@ -67,7 +104,10 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
           <p className="text-[11px] font-black text-blue-100/60 uppercase tracking-[0.2em]">{t('activeCourses')}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-500 via-orange-600 to-rose-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-amber-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('job-listings')}
+          className="bg-gradient-to-br from-amber-500 via-orange-600 to-rose-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-amber-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
@@ -79,7 +119,10 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
           <p className="text-[11px] font-black text-amber-100/60 uppercase tracking-[0.2em]">{t('activeJobs')}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('posts')}
+          className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
@@ -88,11 +131,29 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
             <span className="px-3 py-1 rounded-full bg-white/10 text-[9px] font-black uppercase tracking-widest border border-white/20">{publishedPosts} live</span>
           </div>
           <p className="text-4xl font-black tracking-tighter leading-none mb-2">{posts.length}</p>
-          <p className="text-[11px] font-black text-emerald-100/60 uppercase tracking-[0.2em]">{t('blogPosts')}</p>
+          <p className="text-[11px] font-black text-emerald-100/60 uppercase tracking-[0.2em]">{t('blog_posts') || 'Editorial Posts'}</p>
+        </div>
+
+        <div 
+          onClick={() => onSwitchPanel?.('all-users')}
+          className="bg-gradient-to-br from-rose-500 via-pink-600 to-rose-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-rose-900/20 relative overflow-hidden group cursor-pointer"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
+          <div className="flex items-center justify-between mb-6 relative">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
+              <HiUserGroup className="w-6 h-6 text-rose-100" />
+            </div>
+            <span className="px-3 py-1 rounded-full bg-white/10 text-[9px] font-black uppercase tracking-widest border border-white/20">{jobFinders} profiles</span>
+          </div>
+          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{jobFinders}</p>
+          <p className="text-[11px] font-black text-rose-100/60 uppercase tracking-[0.2em]">Job Finders</p>
         </div>
 
         {/* Row 2: Demographic Breakdown - Upgraded to Premium Gradients */}
-        <div className="bg-gradient-to-br from-violet-600 via-indigo-700 to-indigo-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('students')}
+          className="bg-gradient-to-br from-violet-600 via-indigo-700 to-indigo-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
@@ -104,11 +165,14 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
           <p className="text-[11px] font-black text-indigo-100/60 uppercase tracking-[0.2em]">{t('students')}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-600 via-fuchsia-700 to-fuchsia-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-purple-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('teachers')}
+          className="bg-gradient-to-br from-purple-600 via-fuchsia-700 to-fuchsia-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-purple-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiUsers className="w-6 h-6 text-purple-100" />
+              <HiUserGroup className="w-6 h-6 text-purple-100" />
             </div>
             <span className="text-[10px] font-black text-purple-200/60 uppercase tracking-widest">{users.length ? Math.round((teachers/users.length)*100) : 0}% share</span>
           </div>
@@ -116,7 +180,10 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
           <p className="text-[11px] font-black text-purple-100/60 uppercase tracking-[0.2em]">{t('teachers')}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-600 via-teal-700 to-teal-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('buyers')}
+          className="bg-gradient-to-br from-emerald-600 via-teal-700 to-teal-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
@@ -128,7 +195,10 @@ const AdminOverview = ({ users, courses, jobs, posts, applications }) => {
           <p className="text-[11px] font-black text-emerald-100/60 uppercase tracking-[0.2em]">{t('buyers')}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-600 via-pink-700 to-pink-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-rose-900/20 relative overflow-hidden group">
+        <div 
+          onClick={() => onSwitchPanel?.('sellers')}
+          className="bg-gradient-to-br from-rose-600 via-pink-700 to-pink-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-rose-900/20 relative overflow-hidden group cursor-pointer"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
           <div className="flex items-center justify-between mb-6 relative">
             <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">

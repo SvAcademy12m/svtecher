@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HiPlus, HiPencil, HiTrash } from 'react-icons/hi';
+import { HiPlus, HiPencil, HiTrash, HiCheckCircle } from 'react-icons/hi';
 import { jobService } from '../../../core/services/firestoreService';
 import { auth } from '../../../core/firebase/firebase';
 import { JOB_TYPES, JOB_STATUSES } from '../../../core/utils/constants';
@@ -7,13 +7,15 @@ import { toast } from 'react-toastify';
 import Button from '../../../components/ui/Button';
 import Modal from '../../../components/ui/Modal';
 import Badge from '../../../components/ui/Badge';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 const initialForm = {
   title: '', company: '', description: '', location: '', salary: '',
-  requirements: '', deadline: '', type: 'full-time', status: 'open',
+  requirements: '', deadline: '', type: 'full-time', status: 'open', isVerified: false,
 };
 
 const JobPanel = ({ jobs, applications }) => {
+  const { t } = useLanguage();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [editId, setEditId] = useState(null);
@@ -43,7 +45,7 @@ const JobPanel = ({ jobs, applications }) => {
   };
 
   const editJob = (j) => {
-    setForm({ title: j.title, company: j.company || '', description: j.description, location: j.location, salary: j.salary || '', requirements: j.requirements || '', deadline: j.deadline || '', type: j.type || 'full-time', status: j.status || 'open' });
+    setForm({ title: j.title, company: j.company || '', description: j.description, location: j.location, salary: j.salary || '', requirements: j.requirements || '', deadline: j.deadline || '', type: j.type || 'full-time', status: j.status || 'open', isVerified: !!j.isVerified });
     setEditId(j.id);
     setShowForm(true);
   };
@@ -85,7 +87,10 @@ const JobPanel = ({ jobs, applications }) => {
                 <tr key={j.id} className="transition-all group hover:bg-blue-50/50 dark:hover:bg-white/[0.02]">
                   <td className="p-6 align-middle">
                     <div className="flex flex-col">
-                      <p className="text-sm font-black text-blue-900 dark:text-white tracking-tight uppercase">{j.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black text-blue-900 dark:text-white tracking-tight uppercase">{j.title}</p>
+                        {j.isVerified && <div className="p-0.5 rounded-full bg-blue-500 text-white"><HiCheckCircle className="w-3 h-3" /></div>}
+                      </div>
                       <p className="text-[10px] font-black text-blue-600/40 dark:text-indigo-400/40 uppercase tracking-widest mt-1">{j.company}</p>
                     </div>
                   </td>
@@ -138,6 +143,16 @@ const JobPanel = ({ jobs, applications }) => {
               {JOB_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <input name="deadline" value={form.deadline} onChange={handleChange} className="input-field" placeholder="Deadline" />
+          </div>
+          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
+             <input 
+               type="checkbox" 
+               name="isVerified" 
+               checked={form.isVerified} 
+               onChange={(e) => setForm(prev => ({ ...prev, isVerified: e.target.checked }))}
+               className="w-5 h-5 rounded-lg border-blue-300 text-blue-600 focus:ring-blue-500"
+             />
+             <label className="text-[11px] font-black uppercase tracking-widest text-blue-900">Official Partner Verification</label>
           </div>
           <Button type="submit" variant="primary" size="lg" className="w-full" loading={loading}>
             {editId ? 'Update Job' : 'Post Job'}

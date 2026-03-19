@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HiAcademicCap, HiSearch } from 'react-icons/hi';
 import { courseService } from '../../core/services/firestoreService';
+import { fadeUp } from '../../core/utils/animations';
 import CourseCard from '../../components/cards/CourseCard';
 import Spinner from '../../components/ui/Spinner';
 
@@ -18,12 +19,6 @@ const FILTER_GRADIENTS = {
   advanced: 'from-purple-600 to-pink-700',
 };
 
-const fadeUp = {
-  initial: { opacity: 0, y: 30 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 },
-};
 
 const CoursesPage = () => {
   const [courses, setCourses] = useState([]);

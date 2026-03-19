@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  HiHome, HiUsers, HiAcademicCap, HiBriefcase, HiNewspaper,
+  HiHome, HiUserGroup, HiAcademicCap, HiBriefcase, HiNewspaper,
   HiMail, HiCash, HiUserAdd, HiGlobe, HiLogout, HiMenu, HiX,
   HiTranslate, HiCurrencyDollar, HiSwitchHorizontal, HiCog,
   HiSearch, HiBell, HiDocumentText, HiClipboardList,
-  HiShieldCheck, HiUserGroup, HiShoppingCart, HiOfficeBuilding,
+  HiShieldCheck, HiShoppingCart, HiOfficeBuilding,
   HiMoon, HiSun
 } from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,6 +14,7 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { logoutUser } from '../../core/services/authService';
 import { userService, courseService, jobService, blogService, applicationService, notificationService } from '../../core/services/firestoreService';
+import { ROLES } from '../../core/utils/constants';
 import { toast } from 'react-toastify';
 import { getInitials } from '../../core/utils/formatters';
 
@@ -77,9 +78,9 @@ const AdminDashboard = () => {
     },
     {
       title: 'USER MANAGEMENT',
-      icon: HiUsers,
+      icon: HiUserGroup,
       items: [
-        { key: 'all-users', label: 'All Users', icon: HiUsers },
+        { key: 'all-users', label: 'All Users', icon: HiUserGroup },
         { key: 'students', label: 'Students', icon: HiAcademicCap },
         { key: 'teachers', label: 'Teachers', icon: HiUserGroup },
         { key: 'buyers', label: 'Buyers Only', icon: HiShoppingCart },
@@ -113,6 +114,15 @@ const AdminDashboard = () => {
       ]
     },
     {
+      title: 'PUBLIC PORTALS',
+      icon: HiGlobe,
+      items: [
+        { key: 'go-home', label: 'View Homepage', icon: HiHome, external: true, path: '/' },
+        { key: 'go-services', label: 'View Services', icon: HiShoppingCart, external: true, path: '/services' },
+        { key: 'go-courses', label: 'View Catalog', icon: HiAcademicCap, external: true, path: '/courses' },
+      ]
+    },
+    {
       items: [
         { key: 'messages', label: 'Messages', icon: HiMail, badge: notifications.length || null },
         { key: 'settings', label: 'Settings', icon: HiCog },
@@ -122,7 +132,7 @@ const AdminDashboard = () => {
 
   const renderPanel = () => {
     switch (activePanel) {
-      case 'dashboard': return <AdminOverview users={allUsers} courses={courses} jobs={jobs} posts={posts} applications={applications} />;
+      case 'dashboard': return <AdminOverview users={allUsers} courses={courses} jobs={jobs} posts={posts} applications={applications} onSwitchPanel={setActivePanel} />;
       case 'certificates': return <CertificatePanel users={allUsers} courses={courses} />;
       case 'all-users': return <UserPanel users={allUsers} filterRole={null} />;
       case 'students': return <UserPanel users={allUsers} filterRole={ROLES.STUDENT} title={t('students')} />;
@@ -139,7 +149,7 @@ const AdminDashboard = () => {
       case 'referrals': return <ReferralPanel users={allUsers} />;
       case 'messages': return <MessagePanel notifications={notifications} />;
       case 'settings': return <SettingsPanel />;
-      default: return <AdminOverview users={allUsers} courses={courses} jobs={jobs} posts={posts} applications={applications} />;
+      default: return <AdminOverview users={allUsers} courses={courses} jobs={jobs} posts={posts} applications={applications} onSwitchPanel={setActivePanel} />;
     }
   };
 
@@ -190,25 +200,32 @@ const AdminDashboard = () => {
               {section.items.map(item => (
                 <button
                   key={item.key}
-                  onClick={() => { setActivePanel(item.key); onNavClick?.(); }}
+                  onClick={() => { 
+                    if (item.external) {
+                      navigate(item.path);
+                    } else {
+                      setActivePanel(item.key); 
+                    }
+                    onNavClick?.(); 
+                  }}
                   className={`w-full flex items-center gap-4 px-5 py-4 rounded-[1.5rem] transition-all duration-500 group relative overflow-hidden ${
-                    activePanel === item.key
+                    !item.external && activePanel === item.key
                       ? 'bg-white/10 border border-white/20 text-white shadow-[0_20px_40px_rgba(0,0,0,0.3)] scale-[1.02]'
                       : 'text-white/70 hover:text-white hover:bg-white/[0.03]'
                   }`}
                 >
                   {/* Subtle Glow behind active item */}
-                  {activePanel === item.key && (
+                  {!item.external && activePanel === item.key && (
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent blur-xl pointer-events-none" />
                   )}
                   
                   {/* Left Indicator */}
-                  {activePanel === item.key && (
+                  {!item.external && activePanel === item.key && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-500 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.8)]" />
                   )}
 
                   <div className={`p-3 rounded-2xl transition-all duration-500 z-10 ${
-                    activePanel === item.key 
+                    !item.external && activePanel === item.key 
                       ? 'bg-gradient-to-br from-blue-400 to-indigo-600 text-white shadow-[0_10px_20px_rgba(37,99,235,0.4)] -rotate-6 scale-110' 
                       : 'bg-white/5 text-white/40 group-hover:text-blue-200 group-hover:bg-white/10 group-hover:rotate-6'
                   }`}>
@@ -216,7 +233,7 @@ const AdminDashboard = () => {
                   </div>
 
                   <span className={`flex-1 text-left tracking-[0.1em] uppercase text-[11px] font-black z-10 ${
-                    activePanel === item.key ? 'text-white drop-shadow-md' : 'text-white/80'
+                    !item.external && activePanel === item.key ? 'text-white drop-shadow-md' : 'text-white/80'
                   }`}>
                     {t(item.key.replace(/-/g, '_')) || item.label}
                   </span>
@@ -259,15 +276,9 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="flex h-screen bg-blue-50/50 dark:bg-slate-900 overflow-hidden transition-colors">
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex w-[300px] flex-col flex-shrink-0 transition-all duration-500 relative z-30 shadow-[10px_0_40px_rgba(0,0,0,0.3)] border-r border-white/10 dark:border-white/5" 
-             style={{ 
-               background: theme === 'dark' 
-                 ? 'radial-gradient(circle at top right, #1a2342, #0e1225 60%), linear-gradient(180deg, #0e1225 0%, #070918 100%)' 
-                 : 'radial-gradient(circle at top right, #2563eb, #1e3a8a 60%), linear-gradient(180deg, #1e3a8a 0%, #172554 100%)' 
-             }}>
-        <div className="absolute inset-0 bg-blue-500/5 mix-blend-overlay pointer-events-none" />
+    <div className="flex min-h-screen bg-slate-50 dark:bg-[#080b18] overflow-x-hidden font-sans">
+      {/* Sidebar - Desktop Navigation Hub */}
+      <aside className="hidden lg:flex flex-col w-[300px] bg-gradient-to-br from-[#121831] via-[#0e1225] to-[#0a0d1d] border-r border-white/5 shadow-[20px_0_50px_rgba(0,0,0,0.3)] sticky top-0 h-screen overflow-y-auto dark-scroll z-30">
         <SidebarContent />
       </aside>
 
@@ -291,17 +302,28 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Mobile Sidebar Floating Action Button (FAB) for clean app experience */}
+      <button 
+        onClick={() => setMobileSidebarOpen(true)}
+        className="lg:hidden fixed bottom-8 right-6 z-[60] w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-[0_10px_25px_rgba(37,99,235,0.4)] active:scale-90 transition-all border-4 border-white/10 backdrop-blur-md"
+      >
+        <HiMenu className="w-7 h-7" />
+      </button>
+
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
-        <header className="h-20 bg-white/80 dark:bg-[#0e1225]/80 backdrop-blur-xl border-b border-blue-100 dark:border-white/5 px-6 lg:px-8 flex items-center justify-between flex-shrink-0 transition-all z-20">
+      <div className="flex-1 flex flex-col relative min-w-0 bg-slate-50 dark:bg-[#080b18]">
+        {/* Top bar - Now sticky at top since global Navbar is hidden */}
+        <header className="sticky top-0 h-20 bg-white/80 dark:bg-[#0e1225]/80 backdrop-blur-xl border-b border-blue-100 dark:border-white/5 px-6 lg:px-8 flex items-center justify-between flex-shrink-0 transition-all z-20">
           <div className="flex items-center gap-5">
-            <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-3 rounded-2xl bg-blue-50 dark:bg-white/5 text-blue-600 dark:text-slate-400 shadow-sm">
-              <HiMenu className="w-6 h-6" />
-            </button>
-            <div>
-              <h2 className="text-xl font-black text-blue-900 dark:text-white tracking-tight">{getPanelLabel()}</h2>
-              <p className="text-[10px] font-black text-blue-600/50 dark:text-indigo-400/50 uppercase tracking-[0.2em] mt-0.5">Control Center</p>
+            <div className="flex items-center gap-6">
+              <div>
+                <h2 className="text-xl font-black text-blue-900 dark:text-white tracking-tight">{getPanelLabel()}</h2>
+                <p className="text-[10px] font-black text-blue-600/50 dark:text-indigo-400/50 uppercase tracking-[0.2em] mt-0.5">Control Center</p>
+              </div>
+              <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 shadow-inner">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest leading-none">Firebase Sync: Active</span>
+              </div>
             </div>
           </div>
 
@@ -314,6 +336,9 @@ const AdminDashboard = () => {
               <button onClick={toggleCurrency} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:from-emerald-600 hover:to-teal-600 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/5">
                 <HiCurrencyDollar className="w-4 h-4" /> 
                 {currency} MARKET
+              </button>
+              <button onClick={() => navigate('/')} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 hover:from-indigo-600 hover:to-blue-600 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest shadow-lg shadow-indigo-500/5 italic">
+                <HiHome className="w-4 h-4" /> LIVE SITE
               </button>
             </div>
 
@@ -361,7 +386,7 @@ const AdminDashboard = () => {
         </header>
 
         {/* Panel */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-slate-50 dark:bg-[#080b18] transition-colors">
+        <main className="flex-1 p-4 lg:p-6 transition-colors">
           {renderPanel()}
         </main>
       </div>

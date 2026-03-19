@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HiMenu, HiX, HiTranslate, HiSearch, HiArrowRight, HiMoon, HiSun } from 'react-icons/hi';
+import { HiMenu, HiX, HiTranslate, HiSearch, HiArrowRight, HiMoon, HiSun, HiUserGroup } from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -42,16 +42,16 @@ const Navbar = () => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  if (location.pathname.startsWith('/dashboard')) return null;
+  // Unified app shell - Navbar renders everywhere
 
   const navLinks = [
-    { to: '/', label: t('home') },
-    { to: '/services', label: t('services') },
-    { to: '/courses', label: t('courses') },
-    { to: '/jobs', label: t('jobs') },
-    { to: '/blog', label: t('blog') },
-    { to: '/about', label: t('about') },
-    { to: '/contact', label: t('contact') },
+    { to: '/', label: t('home').toUpperCase() },
+    { to: '/services', label: t('services').toUpperCase() },
+    { to: '/courses', label: t('courses').toUpperCase() },
+    { to: '/jobs', label: t('jobs').toUpperCase() },
+    { to: '/blog', label: t('blog').toUpperCase() },
+    { to: '/about', label: t('about').toUpperCase() },
+    { to: '/contact', label: t('contact').toUpperCase() },
   ];
 
   const dashboardPath = userData?.role ? (ROLE_DASHBOARD_PATHS[userData.role] || '/dashboard/student') : null;
@@ -67,19 +67,19 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           
           {/* Logo */}
-          <NavLink to="/" className="flex items-center gap-3 group" onClick={() => window.scrollTo(0,0)}>
+          <NavLink to="/" className="flex items-center gap-2 sm:gap-3 group" onClick={() => window.scrollTo(0,0)}>
             <div className="relative">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-700 via-blue-600 to-cyan-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30 transform group-hover:rotate-12 transition-all duration-500 overflow-hidden">
-                <span className="text-white font-black text-sm relative z-10 italic">SV</span>
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-700 via-blue-600 to-cyan-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30 transform group-hover:rotate-12 transition-all duration-500 overflow-hidden">
+                <span className="text-white font-black text-xs sm:text-sm relative z-10 italic">SV</span>
                 <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
               </div>
-              <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-600 to-cyan-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+              <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-600 to-cyan-400 rounded-2xl blur opacity-10 group-hover:opacity-30 transition-opacity"></div>
             </div>
-            <div className="hidden sm:flex flex-col ml-1 uppercase text-white">
-              <span className="text-[16px] font-black tracking-widest leading-none drop-shadow-md">
+            <div className="flex flex-col ml-0 sm:ml-1 uppercase text-white">
+              <span className="text-[13px] sm:text-[16px] font-black tracking-tight sm:tracking-widest leading-none drop-shadow-md">
                 SVTECH <span className="text-cyan-300">DIGITAL</span>
               </span>
-              <span className="text-[9px] font-black tracking-[0.4em] text-white/70 leading-none mt-1">
+              <span className="hidden xs:block text-[7px] sm:text-[9px] font-black tracking-[0.3em] sm:tracking-[0.4em] text-white/70 leading-none mt-1">
                 TECHNOLOGY
               </span>
             </div>
@@ -161,7 +161,7 @@ const Navbar = () => {
                         <div className="absolute inset-0 bg-white/5 mix-blend-overlay" />
                         <div className="relative z-10">
                           <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl font-black mx-auto mb-3 border border-white/20">
-                            {userData?.name?.charAt(0).toUpperCase() || <HiUsers />}
+                            {userData?.name?.charAt(0).toUpperCase() || <HiUserGroup />}
                           </div>
                           <h3 className="font-black text-lg truncate">{userData?.name || 'Explorer'}</h3>
                           <p className="text-[10px] font-black uppercase tracking-widest text-cyan-300 opacity-80">{userData?.role || 'Guest'}</p>
@@ -196,10 +196,10 @@ const Navbar = () => {
                         {/* Action Buttons */}
                         <div className="space-y-2">
                           <button onClick={() => navigate(dashboardPath || '/profile')} className="w-full py-3 rounded-xl bg-blue-700 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-800 transition-all shadow-lg shadow-blue-500/20">
-                            Access Terminal
+                            ACCESS TERMINAL
                           </button>
                           <button onClick={logout} className="w-full py-3 rounded-xl border border-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100 transition-all">
-                            De-authorize
+                            DE-AUTHORIZE
                           </button>
                         </div>
                       </div>
@@ -208,20 +208,24 @@ const Navbar = () => {
                </div>
             ) : (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => navigate('/login')}
-                  className={`hidden md:block px-5 py-2.5 rounded-xl text-sm font-black transition-all ${
-                    isScrolled ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
-                  }`}
-                >
-                  Log In
-                </button>
-                <button
-                  onClick={() => navigate('/register')}
-                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all active:scale-95"
-                >
-                  Sign Up
-                </button>
+                {!location.pathname.startsWith('/login') && (
+                  <button
+                    onClick={() => navigate('/login')}
+                    className={`hidden md:block px-5 py-2.5 rounded-xl text-sm font-black transition-all ${
+                      isScrolled || location.pathname.startsWith('/register') || location.pathname.startsWith('/signup') ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
+                    }`}
+                  >
+                    LOG IN
+                  </button>
+                )}
+                {!(location.pathname.startsWith('/register') || location.pathname.startsWith('/signup')) && (
+                  <button
+                    onClick={() => navigate('/register')}
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all active:scale-95"
+                  >
+                    SIGN UP
+                  </button>
+                )}
               </div>
             )}
 
@@ -274,15 +278,50 @@ const Navbar = () => {
               ))}
             </nav>
 
-            <div className="pt-6 border-t border-slate-100 mt-auto space-y-4">
-              <button onClick={toggleLanguage} className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-slate-50 text-slate-800 font-bold">
+            <div className="pt-6 border-t border-slate-100 mt-auto space-y-3">
+              <button onClick={toggleLanguage} className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl bg-slate-50 text-slate-800 font-bold text-sm">
                 <HiTranslate className="w-5 h-5 text-blue-500" />
                 {lang === 'en' ? 'Switch to አማርኛ' : 'ወደ English ቀይር'}
               </button>
-              {!user && (
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => navigate('/login')} className="py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-600">Login</button>
-                  <button onClick={() => navigate('/register')} className="py-4 bg-blue-600 rounded-2xl font-black text-white shadow-lg shadow-blue-500/30">Sign Up</button>
+              {user ? (
+                <div className="space-y-3">
+                  {/* User Info */}
+                  <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-lg">
+                      {userData?.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-slate-900 truncate">{userData?.name || 'User'}</p>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{userData?.role || 'Member'}</p>
+                    </div>
+                  </div>
+                  {/* Profile Actions */}
+                  <button onClick={() => navigate('/profile')} className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                    <HiUserGroup className="w-4 h-4" /> Edit Profile
+                  </button>
+                  <button onClick={() => navigate(dashboardPath || '/profile')} className="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                    <HiArrowRight className="w-4 h-4" /> {userData?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
+                  </button>
+                  <button onClick={() => { logout(); navigate('/'); }} className="w-full py-3.5 rounded-2xl border-2 border-rose-100 text-rose-500 font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
+                    <HiX className="w-4 h-4" /> Logout
+                  </button>
+                </div>
+              ) : (
+                <div className={`grid gap-3 ${
+                  location.pathname.startsWith('/login') || location.pathname.startsWith('/register') || location.pathname.startsWith('/signup') 
+                    ? 'grid-cols-1' 
+                    : 'grid-cols-2'
+                }`}>
+                  {!location.pathname.startsWith('/login') && (
+                    <button onClick={() => { navigate('/login'); setMobileOpen(false); }} className="py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-600 transition-all active:scale-95">
+                      Log In
+                    </button>
+                  )}
+                  {!(location.pathname.startsWith('/register') || location.pathname.startsWith('/signup')) && (
+                    <button onClick={() => { navigate('/register'); setMobileOpen(false); }} className="py-4 bg-blue-600 rounded-2xl font-black text-white shadow-lg shadow-blue-500/30 transition-all active:scale-95">
+                      Sign Up
+                    </button>
+                  )}
                 </div>
               )}
             </div>

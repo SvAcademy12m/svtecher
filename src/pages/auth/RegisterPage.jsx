@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaGoogle, FaFacebook, FaEye, FaEyeSlash, FaCheck } from 'react-icons/fa';
-import { HiArrowRight, HiAcademicCap, HiBriefcase, HiDesktopComputer, HiShoppingCart, HiShieldCheck, HiArrowLeft } from 'react-icons/hi';
+import { FaGoogle, FaFacebook, FaEye, FaEyeSlash, FaGithub, FaLinkedin, FaCheck } from 'react-icons/fa';
+import { HiArrowRight, HiAcademicCap, HiBriefcase, HiDesktopComputer, HiShoppingCart, HiShieldCheck, HiArrowLeft, HiLightBulb } from 'react-icons/hi';
 import { registerUser, socialLogin } from '../../core/services/authService';
 import { ROLES, ROLE_DASHBOARD_PATHS } from '../../core/utils/constants';
 import { toast } from 'react-toastify';
@@ -60,7 +60,7 @@ const RegisterPage = () => {
     try {
       await socialLogin(provider);
       toast.success('Social authentication successful');
-      const redirectPath = location.state?.returnUrl || '/';
+      const redirectPath = location.state?.returnUrl || '/redirect';
       navigate(redirectPath);
     } catch {
       toast.error('Social login failed');
@@ -70,7 +70,7 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
+    <div className="flex-1 mt-20 min-h-[calc(100vh-80px)] flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -126,22 +126,23 @@ const RegisterPage = () => {
         </div>
 
         {/* Right Side: Interactive Form */}
-        <div className="p-8 sm:p-12 flex flex-col justify-center">
-          <div className="mb-10">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] block text-center w-full">PROTOCOL: STEP {step}/2</span>
+        <div className="p-8 sm:p-12 flex flex-col justify-center bg-gradient-to-br from-blue-700 to-indigo-900 text-white relative">
+          <div className="absolute inset-0 bg-white/5 mix-blend-overlay" />
+          
+          <div className="relative z-10">
+            <div className="mb-10 text-center">
+              <span className="text-[10px] font-black text-blue-300 uppercase tracking-[0.4em] block mb-2">PROTOCOL: STEP {step}/2</span>
+              {step === 2 && (
+                <button onClick={() => setStep(1)} className="mb-4 text-xs font-black text-blue-300/60 hover:text-white flex items-center gap-1 uppercase tracking-widest mx-auto">
+                  <HiArrowLeft /> BACK TO SELECTION
+                </button>
+              )}
+              <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic">
+                {step === 1 ? "Choose Your Path" : "Initialize Identity"}
+              </h1>
             </div>
-            {step === 2 && (
-              <button onClick={() => setStep(1)} className="mb-4 text-xs font-black text-slate-400 hover:text-blue-600 flex items-center gap-1 uppercase tracking-widest">
-                <HiArrowLeft /> BACK TO SELECTION
-              </button>
-            )}
-            <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase text-center">
-              {step === 1 ? "CHOOSE YOUR PATH" : "INITIALIZE IDENTITY"}
-            </h1>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 relative z-10 font-bold">
             <AnimatePresence mode="wait">
               {step === 1 ? (
                 <motion.div 
@@ -156,26 +157,26 @@ const RegisterPage = () => {
                       key={role.id}
                       type="button"
                       onClick={() => setForm({ ...form, role: role.id })}
-                      className={`flex flex-col items-start gap-4 p-5 rounded-[2rem] border-2 transition-all duration-500 text-left ${
+                      className={`flex flex-col items-start gap-4 p-5 rounded-3xl border-2 transition-all duration-500 text-left ${
                         form.role === role.id
-                          ? 'border-blue-600 bg-blue-50/50 shadow-2xl shadow-blue-600/10 scale-[1.02]'
-                          : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                          ? 'border-white bg-white/20 shadow-2xl scale-[1.02]'
+                          : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
                       }`}
                     >
-                      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${role.color} flex items-center justify-center text-white shadow-xl ${role.shadow}`}>
+                      <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-blue-700 shadow-xl`}>
                         <role.icon className="w-6 h-6" />
                       </div>
                       <div>
-                        <h4 className={`text-sm font-black tracking-widest transition-colors ${form.role === role.id ? 'text-blue-700' : 'text-slate-950'}`}>
+                        <h4 className={`text-sm font-black tracking-widest transition-colors ${form.role === role.id ? 'text-white' : 'text-blue-100'}`}>
                           {role.title}
                         </h4>
-                        <p className="text-[11px] text-slate-500 font-bold mt-1 uppercase leading-none">{role.desc}</p>
+                        <p className="text-[10px] text-blue-200/60 font-black mt-1 uppercase leading-none">{role.desc}</p>
                       </div>
                     </button>
                   ))}
                   <button 
                     type="submit" 
-                    className="col-span-1 sm:col-span-2 mt-4 py-5 rounded-2xl bg-blue-700 hover:bg-blue-800 text-white font-black uppercase tracking-[0.3em] text-sm shadow-xl shadow-blue-700/30 transition-all active:scale-95 flex items-center justify-center gap-3"
+                    className="col-span-1 sm:col-span-2 mt-4 py-5 rounded-2xl bg-white text-blue-900 hover:bg-cyan-400 hover:text-white font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3"
                   >
                     CONTINUE <HiArrowRight className="w-5 h-5" />
                   </button>
@@ -189,32 +190,32 @@ const RegisterPage = () => {
                   className="space-y-5"
                 >
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">FULL NAME IDENTITY</label>
+                    <label className="block text-[10px] font-black text-blue-200 uppercase tracking-[0.2em] mb-2 ml-1">FULL NAME IDENTITY</label>
                     <input
                       name="name" type="text" value={form.name} onChange={handleChange} required
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-300"
+                      className="w-full bg-white/10 border border-white/20 rounded-2xl px-6 py-4 text-white font-black placeholder-blue-300/40 focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-400/40 outline-none transition-all"
                       placeholder="ENTER FULL NAME"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">SECURE EMAIL INTERFACE</label>
+                    <label className="block text-[10px] font-black text-blue-200 uppercase tracking-[0.2em] mb-2 ml-1">SECURE EMAIL INTERFACE</label>
                     <input
                       name="email" type="email" value={form.email} onChange={handleChange} required
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-300"
+                      className="w-full bg-white/10 border border-white/20 rounded-2xl px-6 py-4 text-white font-black placeholder-blue-300/40 focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-400/40 outline-none transition-all"
                       placeholder="EMAIL@DOMAIN.COM"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">ENCRYPTED PASSWORD</label>
+                    <label className="block text-[10px] font-black text-blue-200 uppercase tracking-[0.2em] mb-2 ml-1">ENCRYPTED PASSWORD</label>
                     <div className="relative">
                       <input
                         name="password" type={showPassword ? 'text' : 'password'} value={form.password} onChange={handleChange} required
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-300 pr-14"
+                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-6 py-4 text-white font-black placeholder-blue-300/40 focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-400/40 outline-none transition-all pr-14"
                         placeholder="••••••••"
                       />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600">
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-5 top-1/2 -translate-y-1/2 text-blue-200 hover:text-white transition-colors">
                         {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                       </button>
                     </div>
@@ -223,12 +224,12 @@ const RegisterPage = () => {
                   <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full py-5 rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-800 hover:to-indigo-800 text-white font-black uppercase tracking-[0.3em] text-sm shadow-xl shadow-blue-700/30 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3 mt-4"
+                    className="w-full py-5 rounded-2xl bg-white text-blue-900 hover:bg-cyan-400 hover:text-white font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center gap-3 mt-4"
                   >
                     {loading ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-blue-900/30 border-t-blue-900 rounded-full animate-spin" />
                     ) : (
-                      <>INITIALIZE ACCESS <FaCheck className="w-4 h-4" /></>
+                      <>Initialize Access <FaCheck className="w-4 h-4" /></>
                     )}
                   </button>
                 </motion.div>
@@ -237,27 +238,34 @@ const RegisterPage = () => {
           </form>
 
           {step === 1 && (
-            <div className="mt-10">
-              <div className="relative flex items-center justify-center mb-8">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100" /></div>
-                <span className="relative px-4 bg-white text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">SECURE SOCIAL CONNECT</span>
+            <div className="mt-8 relative z-10">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10"></div></div>
+                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.3em]"><span className="bg-[#151a33] px-4 text-blue-300 rounded-full border border-white/5 uppercase">Legacy Connect</span></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => handleSocialLogin('google')} disabled={loading} className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-slate-200 bg-white shadow-sm font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all">
-                  <FaGoogle className="text-rose-500 text-lg" /> Google
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <button type="button" onClick={() => handleSocialLogin('google')} className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-[9px] uppercase tracking-widest hover:bg-white hover:text-blue-900 transition-all group">
+                  <FaGoogle className="text-rose-400 text-lg group-hover:text-rose-500" /> Google
                 </button>
-                <button onClick={() => handleSocialLogin('facebook')} disabled={loading} className="flex items-center justify-center gap-3 py-4 rounded-2xl border border-slate-200 bg-white shadow-sm font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all">
-                  <FaFacebook className="text-blue-600 text-lg" /> Facebook
+                <button type="button" onClick={() => handleSocialLogin('facebook')} className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-[9px] uppercase tracking-widest hover:bg-white hover:text-blue-900 transition-all group">
+                  <FaFacebook className="text-blue-400 text-lg group-hover:text-blue-600" /> Facebook
+                </button>
+                <button type="button" onClick={() => handleSocialLogin('github')} className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-[9px] uppercase tracking-widest hover:bg-white hover:text-blue-900 transition-all group">
+                  <FaGithub className="text-white text-lg group-hover:text-slate-900" /> GitHub
+                </button>
+                <button type="button" onClick={() => handleSocialLogin('linkedin')} className="flex flex-col items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-[9px] uppercase tracking-widest hover:bg-white hover:text-blue-900 transition-all group">
+                  <FaLinkedin className="text-blue-300 text-lg group-hover:text-blue-700" /> LinkedIn
                 </button>
               </div>
             </div>
           )}
 
-          <div className="mt-10 text-center">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              ALREADY VERIFIED? <Link to="/login" className="text-blue-700 font-black hover:underline ml-2">LOGIN INTERFACE</Link>
+          <div className="mt-10 text-center relative z-10">
+            <p className="text-xs font-bold text-blue-200/60 uppercase tracking-widest">
+              ALREADY VERIFIED? <Link to="/login" className="text-white font-black hover:text-cyan-400 transition-colors ml-2 underline underline-offset-4">LOGIN INTERFACE</Link>
             </p>
           </div>
+        </div>
         </div>
       </motion.div>
     </div>

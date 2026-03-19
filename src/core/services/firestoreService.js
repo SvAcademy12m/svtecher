@@ -1,9 +1,41 @@
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
   getDoc, getDocs, query, where, orderBy, onSnapshot,
-  serverTimestamp, count, getCountFromServer
+  serverTimestamp, getCountFromServer, setDoc
 } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
+
+// --- System Settings ---
+export const systemService = {
+  subscribe: (cb) => subscribeToCollection('settings', (docs) => cb(docs[0] || {})),
+  update: async (data) => {
+    const q = query(collection(db, 'settings'));
+    const snap = await getDocs(q);
+    if (snap.empty) {
+      return addDoc(collection(db, 'settings'), { ...data, updatedAt: serverTimestamp() });
+    }
+    return updateDoc(doc(db, 'settings', snap.docs[0].id), { ...data, updatedAt: serverTimestamp() });
+  }
+};
+
+// --- About Content ---
+export const aboutService = {
+  get: () => getDoc(doc(db, 'content', 'about')),
+  update: (data) => setDoc(doc(db, 'content', 'about'), { ...data, updatedAt: serverTimestamp() }),
+  subscribe: (cb) => onSnapshot(doc(db, 'content', 'about'), (snap) => cb(snap.exists() ? snap.data() : null))
+};
+
+// --- Applications ---
+export const applicationService = {
+  add: (data) => addDoc(collection(db, 'applications'), { ...data, status: 'pending', createdAt: serverTimestamp() }),
+  subscribe: (cb) => subscribeToCollection('applications', cb),
+  update: (id, data) => updateDoc(doc(db, 'applications', id), { ...data, updatedAt: serverTimestamp() }),
+  delete: (id) => deleteDoc(doc(db, 'applications', id)),
+  getByUser: (uid, cb) => subscribeToCollection('applications', cb, [where('userId', '==', uid)]),
+  getByJob: (jobId, cb) => subscribeToCollection('applications', cb, [where('jobId', '==', jobId)])
+};
+
+/** SVTECH FIRESTORE SERVICES - V6 REFRESH */
 
 // ─── Generic CRUD ────────────────────────────
 const addData = async (colName, data) =>
@@ -35,9 +67,16 @@ const getAll = async (colName, orderField = 'createdAt', dir = 'desc') => {
 
 const subscribeToCollection = (colName, callback, constraints = []) => {
   const q = query(collection(db, colName), ...constraints);
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
-  });
+  return onSnapshot(
+    q, 
+    (snapshot) => {
+      callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    },
+    (error) => {
+      console.error(`Error subscribing to ${colName}:`, error);
+      callback([]); // Failsafe: return empty array so UI doesn't hang spinning forever
+    }
+  );
 };
 
 const getCount = async (colName, constraints = []) => {
@@ -47,6 +86,7 @@ const getCount = async (colName, constraints = []) => {
 };
 
 // ─── Domain Services ─────────────────────────
+// Note: We use in-memory filtering here to avoid requiring complex composite indexes on Firebase out-of-the-box.
 export const courseService = {
   create: (data) => addData('courses', data),
   update: (id, data) => updateData('courses', id, data),
@@ -54,6 +94,7 @@ export const courseService = {
   getById: (id) => getById('courses', id),
   getAll: () => getAll('courses'),
   subscribe: (cb) => subscribeToCollection('courses', cb),
+  getOfficial: (cb) => subscribeToCollection('courses', (docs) => cb(docs.filter(d => d.isVerified === true))),
 };
 
 export const jobService = {
@@ -63,7 +104,8 @@ export const jobService = {
   getById: (id) => getById('jobs', id),
   getAll: () => getAll('jobs'),
   subscribe: (cb) => subscribeToCollection('jobs', cb),
-  getOpen: (cb) => subscribeToCollection('jobs', cb, [where('status', '==', 'open')]),
+  getOpen: (cb) => subscribeToCollection('jobs', (docs) => cb(docs.filter(d => d.status === 'open'))),
+  getOfficial: (cb) => subscribeToCollection('jobs', (docs) => cb(docs.filter(d => d.isVerified === true && d.status === 'open'))),
 };
 
 export const blogService = {
@@ -73,20 +115,20 @@ export const blogService = {
   getById: (id) => getById('posts', id),
   getAll: () => getAll('posts'),
   subscribe: (cb) => subscribeToCollection('posts', cb),
-  getPublished: (cb) => subscribeToCollection('posts', cb, [where('status', '==', 'published')]),
+  getPublished: (cb) => subscribeToCollection('posts', (docs) => cb(docs.filter(d => d.status === 'published'))),
 };
 
-export const applicationService = {
-  create: (data) => addData('applications', data),
-  getByUser: (uid, cb) => subscribeToCollection('applications', cb, [where('applicantId', '==', uid)]),
-  subscribe: (cb) => subscribeToCollection('applications', cb),
-};
+// applicationService removed - using enhanced version at top
+
+const users_subscribe = (cb) => subscribeToCollection('users', cb);
+const users_getAll = (cb) => subscribeToCollection('users', cb);
 
 export const userService = {
-  getAll: (cb) => subscribeToCollection('users', cb),
+  subscribe: users_subscribe,
+  getAll: users_getAll,
   getById: (id) => getById('users', id),
   update: (id, data) => updateData('users', id, data),
-  delete: (id) => deleteData('users', id),
+  'delete': (id) => deleteData('users', id),
   getCountByRole: (role) => getCount('users', [where('role', '==', role)]),
   getTotalCount: () => getCount('users'),
 };
@@ -98,13 +140,10 @@ export const webAppService = {
   getById: (id) => getById('web_apps', id),
   getAll: () => getAll('web_apps'),
   subscribe: (cb) => subscribeToCollection('web_apps', cb),
-  getActive: (cb) => subscribeToCollection('web_apps', cb, [where('status', '==', 'active')]),
+  getActive: (cb) => subscribeToCollection('web_apps', (docs) => cb(docs.filter(d => d.status === 'active'))),
 };
 
 export const notificationService = {
-  getUnread: (uid, cb) => subscribeToCollection('notifications', cb, [
-    where('userId', '==', uid),
-    where('read', '==', false),
-  ]),
+  getUnread: (uid, cb) => subscribeToCollection('notifications', (docs) => cb(docs.filter(d => d.userId === uid && d.read === false))),
   markRead: (id) => updateData('notifications', id, { read: true, readAt: new Date() }),
 };
