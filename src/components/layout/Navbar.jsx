@@ -45,13 +45,12 @@ const Navbar = () => {
   // Unified app shell - Navbar renders everywhere
 
   const navLinks = [
-    { to: '/', label: t('home').toUpperCase() },
-    { to: '/services', label: t('services').toUpperCase() },
-    { to: '/courses', label: t('courses').toUpperCase() },
-    { to: '/jobs', label: t('jobs').toUpperCase() },
-    { to: '/blog', label: t('blog').toUpperCase() },
-    { to: '/about', label: t('about').toUpperCase() },
-    { to: '/contact', label: t('contact').toUpperCase() },
+    { to: '/', label: t('home') },
+    { to: '/services', label: t('services') },
+    { to: '/courses', label: t('courses') },
+    { to: '/blog', label: t('blog') },
+    { to: '/about', label: t('about') },
+    { to: '/contact', label: t('contact') },
   ];
 
   const dashboardPath = userData?.role ? (ROLE_DASHBOARD_PATHS[userData.role] || '/dashboard/student') : null;
@@ -70,17 +69,17 @@ const Navbar = () => {
           <NavLink to="/" className="flex items-center gap-2 sm:gap-3 group" onClick={() => window.scrollTo(0,0)}>
             <div className="relative">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-indigo-700 via-blue-600 to-cyan-500 flex items-center justify-center shadow-2xl shadow-indigo-500/30 transform group-hover:rotate-12 transition-all duration-500 overflow-hidden">
-                <span className="text-white font-black text-xs sm:text-sm relative z-10 italic">SV</span>
+                <span className="text-white font-black text-xs sm:text-sm relative z-10">SV</span>
                 <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors"></div>
               </div>
               <div className="absolute -inset-1 bg-gradient-to-tr from-indigo-600 to-cyan-400 rounded-2xl blur opacity-10 group-hover:opacity-30 transition-opacity"></div>
             </div>
-            <div className="flex flex-col ml-0 sm:ml-1 uppercase text-white">
-              <span className="text-[13px] sm:text-[16px] font-black tracking-tight sm:tracking-widest leading-none drop-shadow-md">
-                SVTECH <span className="text-cyan-300">DIGITAL</span>
+            <div className="flex flex-col ml-0 sm:ml-1 text-white">
+              <span className="text-[14px] sm:text-[20px] font-black tracking-tighter leading-none drop-shadow-2xl">
+                SVTECH <span className="text-cyan-300 font-black">DIGITAL</span>
               </span>
-              <span className="hidden xs:block text-[7px] sm:text-[9px] font-black tracking-[0.3em] sm:tracking-[0.4em] text-white/70 leading-none mt-1">
-                TECHNOLOGY
+              <span className="text-[8px] sm:text-[11px] font-black tracking-[0.4em] text-white/95 leading-none mt-1 uppercase">
+                Technology & Training
               </span>
             </div>
           </NavLink>
@@ -93,7 +92,7 @@ const Navbar = () => {
                 to={link.to}
                 end={link.to === '/'}
                 className={({ isActive }) =>
-                  `px-5 py-2.5 rounded-xl text-sm font-black uppercase tracking-widest transition-all duration-300 ${
+                  `px-5 py-2.5 rounded-xl text-sm font-black tracking-widest transition-all duration-300 ${
                     isActive
                       ? 'bg-white text-blue-700 shadow-xl shadow-white/20 scale-105'
                       : 'text-white/80 hover:text-white hover:bg-white/10'
@@ -135,12 +134,12 @@ const Navbar = () => {
 
             <button
               onClick={toggleLanguage}
-              className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
+              className={`hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black tracking-widest transition-all ${
                 isScrolled ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-white/10 text-white hover:bg-white/20'
               }`}
             >
               <HiTranslate className="w-4 h-4" />
-              {lang === 'en' ? 'AM' : 'EN'}
+              {lang === 'en' ? 'Am' : 'En'}
             </button>
 
             <div className="h-6 w-px bg-slate-200/20 hidden sm:block mx-1" />
@@ -172,7 +171,7 @@ const Navbar = () => {
                         {/* Bio */}
                         <div className="space-y-2">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Core Bio</span>
-                          <p className="text-xs text-slate-600 leading-relaxed italic">
+                          <p className="text-xs text-slate-600 leading-relaxed">
                             {userData?.bio || "Building the digital future with SVTECH Excellence."}
                           </p>
                         </div>
@@ -196,11 +195,11 @@ const Navbar = () => {
                         {/* Action Buttons */}
                         <div className="space-y-2">
                           <button onClick={() => navigate(dashboardPath || '/profile')} className="w-full py-3 rounded-xl bg-blue-700 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-800 transition-all shadow-lg shadow-blue-500/20">
-                            ACCESS TERMINAL
-                          </button>
-                          <button onClick={logout} className="w-full py-3 rounded-xl border border-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100 transition-all">
-                            DE-AUTHORIZE
-                          </button>
+                             {t('goToDashboard')}
+                           </button>
+                           <button onClick={logout} className="w-full py-3 rounded-xl border border-slate-100 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100 transition-all">
+                             {t('logout')}
+                           </button>
                         </div>
                       </div>
                     </div>
@@ -215,7 +214,7 @@ const Navbar = () => {
                       isScrolled || location.pathname.startsWith('/register') || location.pathname.startsWith('/signup') ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'
                     }`}
                   >
-                    LOG IN
+                    {t('signIn')}
                   </button>
                 )}
                 {!(location.pathname.startsWith('/register') || location.pathname.startsWith('/signup')) && (
@@ -223,7 +222,7 @@ const Navbar = () => {
                     onClick={() => navigate('/register')}
                     className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-sm font-black rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all active:scale-95"
                   >
-                    SIGN UP
+                    {t('signUpNow')}
                   </button>
                 )}
               </div>
@@ -246,33 +245,33 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
-            initial={{ x: '100%' }}
+            initial={{ x: '-100%' }}
             animate={{ x: 0 }}
-            exit={{ x: '100%' }}
+            exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 w-[80%] max-w-sm bg-white z-[60] p-6 shadow-2xl lg:hidden flex flex-col"
+            className="fixed inset-y-0 left-0 w-[85%] max-w-sm bg-white z-[60] p-6 shadow-2xl lg:hidden flex flex-col border-r border-slate-100"
           >
             <div className="flex items-center justify-between mb-10">
-              <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black italic">SV</div>
+              <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black">SV</div>
               <button onClick={() => setMobileOpen(false)} className="p-2 text-slate-400 hover:text-slate-900">
                 <HiX className="w-7 h-7" />
               </button>
             </div>
             
-            <nav className="space-y-1 flex-1 overflow-y-auto">
+            <nav className="space-y-2 flex-1 overflow-y-auto py-4">
               {navLinks.map((link, i) => (
-                <motion.div key={link.to} initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}>
+                <motion.div key={link.to} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: i * 0.05 }}>
                   <NavLink
                     to={link.to}
                     end={link.to === '/'}
                     className={({ isActive }) =>
-                      `flex items-center justify-between p-4 rounded-2xl text-lg font-black transition-all ${
-                        isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
+                      `flex items-center justify-between p-5 rounded-2xl text-xl font-black transition-all ${
+                        isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 translate-x-2' : 'text-slate-700 hover:bg-slate-50'
                       }`
                     }
                   >
                     {link.label}
-                    <HiArrowRight className="w-5 h-5 opacity-0 active:opacity-100 transition-opacity" />
+                    <HiArrowRight className={`w-6 h-6 transition-transform ${isActive ? 'translate-x-0 opacity-100' : '-translate-x-4 opacity-0'}`} />
                   </NavLink>
                 </motion.div>
               ))}
@@ -296,15 +295,15 @@ const Navbar = () => {
                     </div>
                   </div>
                   {/* Profile Actions */}
-                  <button onClick={() => navigate('/profile')} className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
-                    <HiUserGroup className="w-4 h-4" /> Edit Profile
-                  </button>
-                  <button onClick={() => navigate(dashboardPath || '/profile')} className="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
-                    <HiArrowRight className="w-4 h-4" /> {userData?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}
-                  </button>
-                  <button onClick={() => { logout(); navigate('/'); }} className="w-full py-3.5 rounded-2xl border-2 border-rose-100 text-rose-500 font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
-                    <HiX className="w-4 h-4" /> Logout
-                  </button>
+                   <button onClick={() => navigate('/profile')} className="w-full py-3.5 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                     <HiUserGroup className="w-4 h-4" /> {t('editProfile')}
+                   </button>
+                   <button onClick={() => navigate(dashboardPath || '/profile')} className="w-full py-3.5 rounded-2xl bg-indigo-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2">
+                     <HiArrowRight className="w-4 h-4" /> {userData?.role === 'admin' ? t('adminConsole') : t('dashboard')}
+                   </button>
+                   <button onClick={() => { logout(); navigate('/'); }} className="w-full py-3.5 rounded-2xl border-2 border-rose-100 text-rose-500 font-black text-xs uppercase tracking-widest hover:bg-rose-50 transition-all flex items-center justify-center gap-2">
+                     <HiX className="w-4 h-4" /> {t('logout')}
+                   </button>
                 </div>
               ) : (
                 <div className={`grid gap-3 ${
@@ -313,15 +312,15 @@ const Navbar = () => {
                     : 'grid-cols-2'
                 }`}>
                   {!location.pathname.startsWith('/login') && (
-                    <button onClick={() => { navigate('/login'); setMobileOpen(false); }} className="py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-600 transition-all active:scale-95">
-                      Log In
-                    </button>
-                  )}
-                  {!(location.pathname.startsWith('/register') || location.pathname.startsWith('/signup')) && (
-                    <button onClick={() => { navigate('/register'); setMobileOpen(false); }} className="py-4 bg-blue-600 rounded-2xl font-black text-white shadow-lg shadow-blue-500/30 transition-all active:scale-95">
-                      Sign Up
-                    </button>
-                  )}
+                     <button onClick={() => { navigate('/login'); setMobileOpen(false); }} className="py-4 border-2 border-slate-100 rounded-2xl font-black text-slate-600 transition-all active:scale-95">
+                       {t('signIn')}
+                     </button>
+                   )}
+                   {!(location.pathname.startsWith('/register') || location.pathname.startsWith('/signup')) && (
+                     <button onClick={() => { navigate('/register'); setMobileOpen(false); }} className="py-4 bg-blue-600 rounded-2xl font-black text-white shadow-lg shadow-blue-500/30 transition-all active:scale-95">
+                       {t('signUpNow')}
+                     </button>
+                   )}
                 </div>
               )}
             </div>

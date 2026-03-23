@@ -1,373 +1,382 @@
-import React from 'react';
-import { HiUserGroup, HiAcademicCap, HiBriefcase, HiNewspaper, HiDocumentText, HiCash, HiTrendingUp, HiShoppingCart, HiSwitchHorizontal, HiHome } from 'react-icons/hi';
-import { ROLES, ROLE_LABELS } from '../../../core/utils/constants';
+import React, { useMemo, useState, useEffect } from 'react';
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { db } from '../../../core/firebase/firebase';
+import {
+  HiUserGroup, HiAcademicCap, HiBriefcase, HiNewspaper,
+  HiCash, HiShoppingCart, HiShieldCheck, HiOutlineSearch,
+  HiPencilAlt, HiTrash, HiCheckCircle, HiXCircle, HiChevronLeft, HiChevronRight,
+  HiFilter, HiDownload, HiLink
+} from 'react-icons/hi';
+import { ROLES } from '../../../core/utils/constants';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
+
+const AnimatedCounter = ({ value, prefix = '', suffix = '' }) => {
+  return <span>{prefix}{value}{suffix}</span>;
+}
+
+const TABS = [
+  { id: 'overview', label: 'Global Stats' },
+  { id: 'users', label: 'User Hub' },
+  { id: 'jobs', label: 'Jobs & Apps' },
+  { id: 'finance', label: 'Transactions & Payouts' },
+];
 
 const AdminOverview = ({ users, courses, jobs, posts, applications, onSwitchPanel }) => {
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
+  const [activeTab, setActiveTab] = useState('overview');
 
-  const students = users.filter(u => u.role === ROLES.STUDENT).length;
-  const teachers = users.filter(u => u.role === ROLES.TRAINER).length;
-  const jobFinders = users.filter(u => u.role === ROLES.JOB_FINDER).length;
-  const customers = users.filter(u => u.role === ROLES.CUSTOMER).length;
-  const sellers = users.filter(u => u.role === ROLES.SELLER).length;
-  const openJobs = jobs.filter(j => j.status === 'open').length;
-  const publishedPosts = posts.filter(p => p.status === 'published').length;
+  const [transactions, setTransactions] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
 
-  // Role distribution for pie chart simulation
-  const roleData = [
-    { label: 'Students', count: students, color: '#3b82f6', pct: users.length ? (students / users.length * 100) : 0 },
-    { label: 'Teachers', count: teachers, color: '#8b5cf6', pct: users.length ? (teachers / users.length * 100) : 0 },
-    { label: 'Buyers', count: customers, color: '#10b981', pct: users.length ? (customers / users.length * 100) : 0 },
-    { label: 'Sellers', count: sellers, color: '#f59e0b', pct: users.length ? (sellers / users.length * 100) : 0 },
-    { label: 'Job Finders', count: jobFinders, color: '#ec4899', pct: users.length ? (jobFinders / users.length * 100) : 0 },
+  // Fetch Live Data
+  useEffect(() => {
+    const qT = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'));
+    const unsubT = onSnapshot(qT, (snap) => {
+      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const qW = query(collection(db, 'withdrawals'), orderBy('createdAt', 'desc'));
+    const unsubW = onSnapshot(qW, (snap) => {
+      setWithdrawals(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsubT(); unsubW(); };
+  }, []);
+
+  const stats = useMemo(() => {
+    let income = 0, expenses = 0;
+    transactions.forEach(tr => {
+      const amt = Number(tr.amount) || 0;
+      if (['deposit', 'course_payment', 'employer_payment', 'income', 'app_sale'].includes(tr.type)) income += amt;
+      else expenses += amt;
+    });
+
+    let pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+
+    return {
+      totalUsers: users.length,
+      activeUsers: users.filter(u => u.status !== 'banned').length,
+      jobPosts: jobs.length,
+      jobApps: applications.length,
+      courses: courses.length,
+      income,
+      expenses,
+      netProfit: income - expenses,
+      pendingWithdrawals
+    };
+  }, [transactions, withdrawals, users, jobs, applications, courses]);
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+      {/* Header & Tabs */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-[#0e1225] p-4 rounded-[2rem] shadow-sm border border-gray-100 dark:border-white/5">
+        <div>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight px-4">Admin Console</h2>
+        </div>
+        <div className="flex bg-gray-100 dark:bg-white/5 p-1 rounded-2xl overflow-x-auto w-full md:w-auto">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                activeTab === tab.id 
+                  ? 'bg-white dark:bg-blue-600 text-blue-600 dark:text-white shadow-md' 
+                  : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === 'overview' && <OverviewTab stats={stats} formatPrice={formatPrice} />}
+          {activeTab === 'users' && <UsersTab users={users} />}
+          {activeTab === 'jobs' && <JobsTab jobs={jobs} applications={applications} />}
+          {activeTab === 'finance' && <FinanceTab transactions={transactions} withdrawals={withdrawals} formatPrice={formatPrice} />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// --- SUB TABS --- //
+
+const OverviewTab = ({ stats, formatPrice }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <StatCard title="Total Users" value={stats.totalUsers} icon={HiUserGroup} color="from-blue-500 to-indigo-600" />
+      <StatCard title="Active Users" value={stats.activeUsers} icon={HiCheckCircle} color="from-emerald-400 to-teal-500" />
+      <StatCard title="Total Jobs" value={stats.jobPosts} icon={HiBriefcase} color="from-amber-400 to-orange-500" />
+      <StatCard title="Total Apps" value={stats.jobApps} icon={HiNewspaper} color="from-purple-500 to-pink-600" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <StatCard title="Total Revenue" value={formatPrice(stats.income)} icon={HiCash} color="from-emerald-600 to-green-700" highlight />
+      <StatCard title="Pending Withdrawals" value={formatPrice(stats.pendingWithdrawals)} icon={HiShieldCheck} color="from-rose-500 to-red-600" highlight />
+      <StatCard title="Net Profit" value={formatPrice(stats.netProfit)} icon={HiShoppingCart} color="from-cyan-500 to-blue-600" highlight />
+    </div>
+  </div>
+);
+
+const StatCard = ({ title, value, icon: Icon, color, highlight }) => (
+  <motion.div 
+    whileHover={{ y: -4, scale: 1.02 }}
+    className={`relative overflow-hidden p-6 rounded-[2rem] shadow-xl border border-white/10 flex flex-col justify-between ${highlight ? 'h-40' : 'h-32'} bg-gradient-to-br ${color} text-white`}
+  >
+    <div className="absolute top-0 right-0 p-4 opacity-20">
+      <Icon className="w-24 h-24 transform translate-x-4 -translate-y-4" />
+    </div>
+    <div className="relative z-10 flex justify-between items-start">
+      <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+    </div>
+    <div className="relative z-10">
+      <h3 className={`font-black tracking-tighter ${highlight ? 'text-4xl' : 'text-3xl'}`}>{value}</h3>
+      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80 mt-1">{title}</p>
+    </div>
+  </motion.div>
+);
+
+// --- GENERIC DATA TABLE --- //
+const DataTable = ({ columns, data, searchableKeys = ['name', 'email'] }) => {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const filtered = useMemo(() => {
+    if (!search) return data;
+    const lower = search.toLowerCase();
+    return data.filter(item => 
+      searchableKeys.some(key => String(item[key] || '').toLowerCase().includes(lower))
+    );
+  }, [data, search, searchableKeys]);
+
+  const paginated = filtered.slice((page - 1) * limit, page * limit);
+  const totalPages = Math.ceil(filtered.length / limit) || 1;
+
+  return (
+    <div className="bg-white dark:bg-[#0e1225] rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden">
+      <div className="p-6 border-b border-gray-100 dark:border-white/5 flex flex-wrap gap-4 items-center justify-between bg-gray-50/50 dark:bg-white/[0.02]">
+        <div className="relative group w-full max-w-sm">
+          <HiOutlineSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="Search records..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full bg-white dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm font-bold text-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500/30 outline-none transition-all"
+          />
+        </div>
+        <div className="text-xs font-bold text-gray-500 bg-white dark:bg-black/20 px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10">
+          Showing {filtered.length} entries
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-white/[0.02]">
+              {columns.map((col, idx) => (
+                <th key={idx} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                  {col.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50 dark:divide-white/5">
+            {paginated.map((row, rowIdx) => (
+              <tr key={row.id || rowIdx} className="hover:bg-blue-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                {columns.map((col, colIdx) => (
+                  <td key={colIdx} className="px-6 py-4 whitespace-nowrap">
+                    {col.render ? col.render(row) : <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{row[col.accessor]}</span>}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {paginated.length === 0 && (
+              <tr>
+                <td colSpan={columns.length} className="px-6 py-12 text-center text-gray-400 text-sm font-bold">
+                  No records found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="p-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between bg-gray-50/50 dark:bg-white/[0.02]">
+        <button 
+          disabled={page === 1} onClick={() => setPage(p => p - 1)}
+          className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 disabled:opacity-30 hover:bg-white dark:hover:bg-white/5 transition-colors"
+        >
+          <HiChevronLeft className="w-5 h-5" />
+        </button>
+        <span className="text-xs font-black uppercase tracking-widest text-gray-500">Page {page} of {totalPages}</span>
+        <button 
+          disabled={page === totalPages} onClick={() => setPage(p => p + 1)}
+          className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 disabled:opacity-30 hover:bg-white dark:hover:bg-white/5 transition-colors"
+        >
+          <HiChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- SPECIFIC TABS --- //
+
+const UsersTab = ({ users }) => {
+  const updateUserRole = async (userId, newRole) => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { role: newRole });
+      toast.success('User role updated!');
+    } catch (err) {
+      toast.error('Failed to update role');
+    }
+  };
+
+  const toggleBanUser = async (user) => {
+    try {
+      const newStatus = user.status === 'banned' ? 'active' : 'banned';
+      await updateDoc(doc(db, 'users', user.id), { status: newStatus });
+      toast.success(`User ${newStatus} successfully!`);
+    } catch (err) {
+      toast.error('Failed to update user status');
+    }
+  };
+
+  const cols = [
+    { header: 'Full Name', render: (u) => (
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs shrink-0">
+          {u.name?.charAt(0) || '?'}
+        </div>
+        <div>
+          <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">{u.name || 'Unknown User'}</p>
+        </div>
+      </div>
+    )},
+    { header: 'Contact', render: (u) => (
+      <div>
+        <p className="text-[11px] font-bold text-gray-800 dark:text-gray-300">{u.email}</p>
+        {u.phone && <p className="text-[10px] text-gray-500">{u.phone}</p>}
+      </div>
+    )},
+    { header: 'Role', render: (u) => (
+      <select 
+        value={u.role || 'student'} 
+        onChange={(e) => updateUserRole(u.id, e.target.value)}
+        className="bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-gray-700 dark:text-blue-400 outline-none focus:ring-2 focus:ring-blue-500/50"
+      >
+        {Object.values(ROLES).map(r => <option key={r} value={r}>{r}</option>)}
+      </select>
+    )},
+    { header: 'Followers', render: (u) => (
+      <span className="text-xs font-black text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded-md">{u.followersCount || u.followers?.length || 0}</span>
+    )},
+    { header: 'Commission', render: (u) => (
+      <div className="flex items-center gap-1">
+        <input 
+          type="number" 
+          defaultValue={u.earnedCommissions || 0} 
+          onBlur={async (e) => {
+            if (Number(e.target.value) !== (u.earnedCommissions || 0)) {
+              await updateDoc(doc(db, 'users', u.id), { earnedCommissions: Number(e.target.value) });
+              toast.success('Commission Updated');
+            }
+          }}
+          className="w-16 bg-transparent border-b border-gray-300 dark:border-gray-600 px-1 py-0.5 text-xs text-emerald-600 font-black outline-none focus:border-emerald-500 transition-colors text-right"
+        />
+        <span className="text-xs font-bold text-gray-500">Br</span>
+      </div>
+    )},
+    { header: 'Status', render: (u) => (
+      <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-md ${u.status === 'banned' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'}`}>
+        {u.status === 'banned' ? 'Banned' : 'Active'}
+      </span>
+    )},
+    { header: 'Actions', render: (u) => (
+      <div className="flex gap-2">
+        <button onClick={() => toggleBanUser(u)} className={`p-1.5 rounded-lg border transition-colors ${u.status === 'banned' ? 'text-emerald-500 border-emerald-200 hover:bg-emerald-50' : 'text-rose-500 border-rose-200 hover:bg-rose-50'}`} title={u.status === 'banned' ? 'Unban User' : 'Ban User'}>
+          {u.status === 'banned' ? <HiCheckCircle className="w-4 h-4" /> : <HiXCircle className="w-4 h-4" />}
+        </button>
+      </div>
+    )},
+  ];
+
+  return <DataTable columns={cols} data={users} searchableKeys={['name', 'email', 'referralCode']} />;
+};
+
+const JobsTab = ({ jobs, applications }) => {
+  const jobCols = [
+    { header: 'Title', accessor: 'title', render: (j) => <span className="font-bold">{j.title}</span> },
+    { header: 'Company', accessor: 'company' },
+    { header: 'Type', accessor: 'type', render: (j) => <span className="text-[10px] uppercase font-black tracking-widest border border-gray-200 rounded px-2">{j.type}</span> },
+    { header: 'Status', render: (j) => <span className={`text-[10px] uppercase font-black px-2 py-1 rounded ${j.status === 'open' ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>{j.status}</span>}
+  ];
+
+  const appCols = [
+    { header: 'Applicant Name', accessor: 'applicantName', render: (a) => <span className="font-bold">{a.applicantName}</span> },
+    { header: 'Job Post', accessor: 'jobTitle' },
+    { header: 'Status', render: (a) => <span className="text-[10px] uppercase font-black tracking-widest text-cyan-500">{a.status}</span> },
+    { header: 'Date', render: (a) => <span className="text-xs text-gray-500">{new Date(a.createdAt?.seconds * 1000).toLocaleDateString()}</span> }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Welcome */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="text-3xl font-black text-blue-900 dark:text-white tracking-tight">{t('overview') || 'Overview'}</h3>
-          <p className="text-sm font-black text-blue-600/50 dark:text-indigo-400/50 mt-1 uppercase tracking-widest">{t('platform_intelligence')}</p>
-        </div>
-        <div className="flex items-center gap-2 bg-blue-100/50 dark:bg-white/5 p-1 rounded-2xl border border-blue-200/50 dark:border-white/5">
-           <button className="px-4 py-2 rounded-xl bg-white dark:bg-white/10 shadow-sm text-[11px] font-black text-blue-900 dark:text-white uppercase tracking-wider">Today</button>
-           <button className="px-4 py-2 rounded-xl text-[11px] font-black text-blue-600/60 dark:text-slate-400 uppercase tracking-wider hover:text-blue-600 dark:hover:text-white transition-colors">Week</button>
-           <button className="px-4 py-2 rounded-xl text-[11px] font-black text-blue-600/60 dark:text-slate-400 uppercase tracking-wider hover:text-blue-600 dark:hover:text-white transition-colors">Month</button>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-3">Job Postings</h3>
+        <DataTable columns={jobCols} data={jobs} searchableKeys={['title', 'company']} />
       </div>
-
-      {/* Quick Launch Portal */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a href="/" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-500/20 hover:scale-[1.02] transition-all flex items-center justify-between group no-underline">
-           <div>
-              <p className="text-[10px] font-black text-blue-200 uppercase tracking-[0.3em] mb-1">Public Access</p>
-              <h4 className="text-xl font-black uppercase italic tracking-tighter">View Live Home</h4>
-           </div>
-           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg">
-              <HiHome className="w-6 h-6" />
-           </div>
-        </a>
-        <a href="/services" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl p-6 text-white shadow-xl shadow-cyan-500/20 hover:scale-[1.02] transition-all flex items-center justify-between group no-underline">
-           <div>
-              <p className="text-[10px] font-black text-blue-100 uppercase tracking-[0.3em] mb-1">Marketplace</p>
-              <h4 className="text-xl font-black uppercase italic tracking-tighter">View Services</h4>
-           </div>
-           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg">
-              <HiShoppingCart className="w-6 h-6" />
-           </div>
-        </a>
-        <a href="/courses" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 text-white shadow-xl shadow-purple-500/20 hover:scale-[1.02] transition-all flex items-center justify-between group no-underline">
-           <div>
-              <p className="text-[10px] font-black text-purple-200 uppercase tracking-[0.3em] mb-1">Academy</p>
-              <h4 className="text-xl font-black uppercase italic tracking-tighter">View Courses</h4>
-           </div>
-           <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform shadow-lg">
-              <HiAcademicCap className="w-6 h-6" />
-           </div>
-        </a>
+      <div>
+        <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-3">Recent Applications</h3>
+        <DataTable columns={appCols} data={applications} searchableKeys={['applicantName', 'jobTitle']} />
       </div>
+    </div>
+  );
+};
 
-      {/* Main Stat Cards - Advanced */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Row 1: Core Platform Stats */}
-        <div 
-          onClick={() => onSwitchPanel?.('all-users')}
-          className="bg-gradient-to-br from-blue-700 via-indigo-700 to-indigo-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-blue-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiUserGroup className="w-6 h-6 text-blue-100" />
-            </div>
-            <HiTrendingUp className="w-5 h-5 text-emerald-400" />
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{users.length.toLocaleString()}</p>
-          <p className="text-[11px] font-black text-blue-200/60 uppercase tracking-[0.2em]">{t('totalUsers')}</p>
-        </div>
+const FinanceTab = ({ transactions, withdrawals, formatPrice }) => {
+  const transCols = [
+    { header: 'Transaction ID', render: (t) => <span className="text-[10px] font-mono bg-gray-100 dark:bg-white/10 px-2 py-0.5 rounded text-gray-500">{t.id.slice(0, 8)}</span> },
+    { header: 'User', accessor: 'userEmail' },
+    { header: 'Type', render: (t) => <span className="text-[10px] uppercase font-black tracking-widest text-blue-500">{t.type}</span> },
+    { header: 'Amount', render: (t) => <b className={['deposit', 'income'].includes(t.type) ? 'text-emerald-500' : 'text-rose-500'}>{formatPrice(t.amount)}</b> },
+    { header: 'Date', render: (t) => <span className="text-xs text-gray-500">{t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</span> }
+  ];
 
-        <div 
-          onClick={() => onSwitchPanel?.('courses')}
-          className="bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-cyan-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiAcademicCap className="w-6 h-6 text-blue-100" />
-            </div>
-            <span className="px-3 py-1 rounded-full bg-white/10 text-[9px] font-black uppercase tracking-widest border border-white/20">{courses.length} courses</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{courses.filter(c => c.status !== 'unpublished').length}</p>
-          <p className="text-[11px] font-black text-blue-100/60 uppercase tracking-[0.2em]">{t('activeCourses')}</p>
-        </div>
-
-        <div 
-          onClick={() => onSwitchPanel?.('job-listings')}
-          className="bg-gradient-to-br from-amber-500 via-orange-600 to-rose-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-amber-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiBriefcase className="w-6 h-6 text-amber-100" />
-            </div>
-            <span className="px-3 py-1 rounded-full bg-white/10 text-[9px] font-black uppercase tracking-widest border border-white/20">{openJobs} active</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{jobs.length}</p>
-          <p className="text-[11px] font-black text-amber-100/60 uppercase tracking-[0.2em]">{t('activeJobs')}</p>
-        </div>
-
-        <div 
-          onClick={() => onSwitchPanel?.('posts')}
-          className="bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiNewspaper className="w-6 h-6 text-emerald-100" />
-            </div>
-            <span className="px-3 py-1 rounded-full bg-white/10 text-[9px] font-black uppercase tracking-widest border border-white/20">{publishedPosts} live</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{posts.length}</p>
-          <p className="text-[11px] font-black text-emerald-100/60 uppercase tracking-[0.2em]">{t('blog_posts') || 'Editorial Posts'}</p>
-        </div>
-
-        <div 
-          onClick={() => onSwitchPanel?.('all-users')}
-          className="bg-gradient-to-br from-rose-500 via-pink-600 to-rose-700 rounded-[2.5rem] p-7 text-white shadow-xl shadow-rose-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiUserGroup className="w-6 h-6 text-rose-100" />
-            </div>
-            <span className="px-3 py-1 rounded-full bg-white/10 text-[9px] font-black uppercase tracking-widest border border-white/20">{jobFinders} profiles</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{jobFinders}</p>
-          <p className="text-[11px] font-black text-rose-100/60 uppercase tracking-[0.2em]">Job Finders</p>
-        </div>
-
-        {/* Row 2: Demographic Breakdown - Upgraded to Premium Gradients */}
-        <div 
-          onClick={() => onSwitchPanel?.('students')}
-          className="bg-gradient-to-br from-violet-600 via-indigo-700 to-indigo-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiAcademicCap className="w-6 h-6 text-indigo-100" />
-            </div>
-            <span className="text-[10px] font-black text-indigo-200/60 uppercase tracking-widest">{users.length ? Math.round((students/users.length)*100) : 0}% share</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{students.toLocaleString()}</p>
-          <p className="text-[11px] font-black text-indigo-100/60 uppercase tracking-[0.2em]">{t('students')}</p>
-        </div>
-
-        <div 
-          onClick={() => onSwitchPanel?.('teachers')}
-          className="bg-gradient-to-br from-purple-600 via-fuchsia-700 to-fuchsia-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-purple-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiUserGroup className="w-6 h-6 text-purple-100" />
-            </div>
-            <span className="text-[10px] font-black text-purple-200/60 uppercase tracking-widest">{users.length ? Math.round((teachers/users.length)*100) : 0}% share</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{teachers.toLocaleString()}</p>
-          <p className="text-[11px] font-black text-purple-100/60 uppercase tracking-[0.2em]">{t('teachers')}</p>
-        </div>
-
-        <div 
-          onClick={() => onSwitchPanel?.('buyers')}
-          className="bg-gradient-to-br from-emerald-600 via-teal-700 to-teal-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiShoppingCart className="w-6 h-6 text-emerald-100" />
-            </div>
-            <span className="text-[10px] font-black text-emerald-200/60 uppercase tracking-widest">{users.length ? Math.round((customers/users.length)*100) : 0}% share</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{customers.toLocaleString()}</p>
-          <p className="text-[11px] font-black text-emerald-100/60 uppercase tracking-[0.2em]">{t('buyers')}</p>
-        </div>
-
-        <div 
-          onClick={() => onSwitchPanel?.('sellers')}
-          className="bg-gradient-to-br from-rose-600 via-pink-700 to-pink-900 rounded-[2.5rem] p-7 text-white shadow-xl shadow-rose-900/20 relative overflow-hidden group cursor-pointer"
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-colors" />
-          <div className="flex items-center justify-between mb-6 relative">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 shadow-inner">
-              <HiSwitchHorizontal className="w-6 h-6 text-rose-100" />
-            </div>
-            <span className="text-[10px] font-black text-rose-200/60 uppercase tracking-widest">{users.length ? Math.round((sellers/users.length)*100) : 0}% share</span>
-          </div>
-          <p className="text-4xl font-black tracking-tighter leading-none mb-2">{sellers.toLocaleString()}</p>
-          <p className="text-[11px] font-black text-rose-100/60 uppercase tracking-[0.2em]">{t('sellers')}</p>
-        </div>
+  const wdrCols = [
+    { header: 'User Info', render: (w) => (
+      <div>
+        <p className="font-bold text-sm">{w.accountName}</p>
+        <p className="text-[10px] text-gray-500">{w.accountNumber} ({w.bankName})</p>
       </div>
+    )},
+    { header: 'Amount', render: (w) => <b className="text-amber-500">{formatPrice(w.amount)}</b> },
+    { header: 'Status', render: (w) => <span className={`text-[10px] uppercase font-black px-2 py-1 rounded ${w.status === 'completed' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>{w.status}</span>},
+    { header: 'Date', render: (w) => <span className="text-xs text-gray-500">{w.createdAt?.seconds ? new Date(w.createdAt.seconds * 1000).toLocaleDateString() : '-'}</span> }
+  ];
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* User Distribution — Pie Chart */}
-        <div className="bg-white dark:bg-[#151a30] rounded-[2.5rem] border border-blue-50 dark:border-white/5 p-8 shadow-xl shadow-blue-900/5 transition-colors">
-          <h4 className="text-lg font-black text-blue-900 dark:text-white mb-8 tracking-tight uppercase tracking-widest">{t('user_demographics')}</h4>
-          <div className="flex flex-col sm:flex-row items-center gap-10">
-            {/* CSS Pie Chart */}
-            <div className="relative w-48 h-48 flex-shrink-0">
-              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90 filter drop-shadow-xl">
-                {roleData.reduce((acc, role, i) => {
-                  const offset = acc.offset;
-                  const dashArray = `${role.pct} ${100 - role.pct}`;
-                  acc.elements.push(
-                    <circle
-                      key={i}
-                      cx="50" cy="50" r="40"
-                      fill="transparent"
-                      stroke={role.color}
-                      strokeWidth="15"
-                      strokeDasharray={dashArray}
-                      strokeDashoffset={-offset}
-                      className="transition-all duration-1000 ease-in-out hover:stroke-white cursor-pointer"
-                    />
-                  );
-                  acc.offset += role.pct;
-                  return acc;
-                }, { elements: [], offset: 0 }).elements}
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-3xl font-black text-blue-900 dark:text-white leading-none">{users.length}</p>
-                  <p className="text-[10px] text-blue-600/50 dark:text-indigo-400/50 font-black uppercase tracking-widest mt-1">Total</p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Legend */}
-            <div className="grid grid-cols-1 gap-4 w-full">
-              {roleData.map((role, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/50 dark:bg-white/5 border border-blue-100 dark:border-white/5 group hover:bg-white dark:hover:bg-white/10 transition-all">
-                  <div className="flex items-center gap-3">
-                    <span className="w-2.5 h-2.5 rounded-full shadow-lg" style={{ background: role.color }} />
-                    <span className="text-sm font-black text-blue-900/70 dark:text-slate-200/70 group-hover:text-blue-900 dark:group-hover:text-white">{t(role.label.toLowerCase())}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-black text-blue-900 dark:text-white">{role.count}</span>
-                    <span className="text-[10px] font-black text-blue-600/40 dark:text-indigo-400/40">({role.pct.toFixed(0)}%)</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Growth — Bar Chart */}
-        <div className="bg-white dark:bg-[#151a30] rounded-[2.5rem] border border-blue-50 dark:border-white/5 p-8 shadow-xl shadow-blue-900/5 transition-colors">
-          <h4 className="text-lg font-black text-blue-900 dark:text-white mb-8 tracking-tight uppercase tracking-widest">{t('growth_metrics')}</h4>
-          <div className="flex items-end gap-3 h-48 mb-8 px-2">
-            {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'].map((month, i) => {
-              const heights = [30, 50, 75, 45, 85, 60];
-              return (
-                <div key={month} className="flex-1 flex flex-col items-center gap-3 group">
-                  <div className="w-full relative flex flex-col justify-end h-full">
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-900 dark:bg-indigo-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
-                      {Math.round(heights[i] * 1.5)}%
-                    </div>
-                    <div
-                      className="w-full rounded-2xl bg-gradient-to-t from-blue-700 to-indigo-500 shadow-lg shadow-blue-600/10 group-hover:scale-y-105 transition-all duration-500 origin-bottom"
-                      style={{ height: `${heights[i]}%`, minHeight: '12px' }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-black text-blue-900/40 dark:text-slate-400/40 group-hover:text-blue-900 dark:group-hover:text-white uppercase tracking-tighter">{month}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-6 mt-auto pt-6 border-t border-blue-50 dark:border-white/5">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shadow-lg shadow-blue-600/20" />
-              <span className="text-[11px] font-black text-blue-900/60 dark:text-slate-400/60 uppercase tracking-widest">Platform Growth</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-lg shadow-amber-500/20" />
-              <span className="text-[11px] font-black text-amber-900/60 dark:text-slate-400/60 uppercase tracking-widest">Revenue Impact</span>
-            </div>
-          </div>
-        </div>
+  return (
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-3">Withdrawal Requests</h3>
+        <DataTable columns={wdrCols} data={withdrawals} searchableKeys={['accountName', 'accountNumber']} />
       </div>
-
-      {/* Job Status & Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Job Status Overview */}
-        <div className="bg-white dark:bg-[#151a30] rounded-[2.5rem] border border-blue-50 dark:border-white/5 p-8 shadow-xl shadow-blue-900/5 transition-colors">
-          <h4 className="text-lg font-black text-blue-900 dark:text-white mb-6 tracking-tight uppercase tracking-widest">{t('job_metrics')}</h4>
-          <div className="space-y-4">
-            {[
-              { status: 'Open', count: jobs.filter(j => j.status === 'open').length, color: 'bg-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
-              { status: 'Closed', count: jobs.filter(j => j.status === 'closed').length, color: 'bg-rose-500', bg: 'bg-rose-500/10', text: 'text-rose-400' },
-              { status: 'Paused', count: jobs.filter(j => j.status === 'paused').length, color: 'bg-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-400' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50/30 dark:bg-white/5 border border-blue-100/50 dark:border-white/5">
-                <span className={`w-3 h-3 rounded-full ${item.color} shadow-lg shadow-black/20`} />
-                <span className="flex-1 text-sm font-black text-blue-900/70 dark:text-slate-300/70 uppercase tracking-wide">{item.status}</span>
-                <span className={`px-4 py-1.5 rounded-xl text-xs font-black ${item.bg} ${item.text} border border-white/10 shadow-sm`}>{item.count}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 pt-6 border-t border-blue-50 dark:border-white/5">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                 <HiDocumentText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <span className="text-[11px] font-black text-blue-600/60 dark:text-indigo-400/60 uppercase tracking-widest">{applications.length} {t('total_applications')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Users */}
-        <div className="bg-white dark:bg-[#151a30] rounded-[2.5rem] border border-blue-50 dark:border-white/5 p-8 shadow-xl shadow-blue-900/5 transition-colors">
-          <h4 className="text-lg font-black text-blue-900 dark:text-white mb-6 tracking-tight uppercase tracking-widest">{t('recentUsers')}</h4>
-          <div className="space-y-4">
-            {users.slice(0, 6).map(u => (
-              <div key={u.id} className="flex items-center justify-between group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-indigo-600/20 group-hover:scale-110 transition-transform">
-                    {u.name?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-blue-900 dark:text-white tracking-tight line-clamp-1">{u.name || u.email}</p>
-                    <p className="text-[10px] font-black text-blue-600/50 dark:text-indigo-400/50 uppercase tracking-widest">{ROLE_LABELS[u.role] || u.role}</p>
-                  </div>
-                </div>
-                <div className={`w-1.5 h-1.5 rounded-full ${u.status === 'suspended' ? 'bg-rose-500 shadow-rose-500/50' : 'bg-emerald-500 shadow-emerald-500/50'} shadow-lg`} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Posts */}
-        <div className="bg-white dark:bg-[#151a30] rounded-[2.5rem] border border-blue-50 dark:border-white/5 p-8 shadow-xl shadow-blue-900/5 transition-colors">
-          <h4 className="text-lg font-black text-blue-900 dark:text-white mb-6 tracking-tight uppercase tracking-widest">{t('recentPosts')}</h4>
-          <div className="space-y-4">
-            {posts.slice(0, 5).map(p => (
-              <div key={p.id} className="p-4 rounded-2xl bg-blue-50/30 dark:bg-white/5 border border-blue-100/50 dark:border-white/5 hover:border-blue-300 dark:hover:border-white/20 transition-all group">
-                <p className="text-sm font-black text-blue-900 dark:text-white tracking-tight line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors uppercase tracking-wide">{p.title}</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <span className="text-[10px] font-black text-blue-600/40 dark:text-indigo-400/40 uppercase tracking-[0.2em]">{p.category}</span>
-                  <span className="w-1 h-1 rounded-full bg-blue-100 dark:bg-white/10" />
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${p.status === 'published' ? 'text-emerald-500' : 'text-amber-500'}`}>
-                    {p.status || 'published'}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {posts.length === 0 && <p className="text-xs font-black text-blue-600/40 dark:text-indigo-400/40 uppercase tracking-widest text-center py-10">{t('no_data_found')}</p>}
-          </div>
-        </div>
+      <div>
+        <h3 className="text-sm font-black text-gray-500 uppercase tracking-widest mb-3">Global Transactions</h3>
+        <DataTable columns={transCols} data={transactions} searchableKeys={['userEmail', 'type', 'id']} />
       </div>
     </div>
   );

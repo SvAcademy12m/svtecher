@@ -73,9 +73,9 @@ const BlogCard = ({ post }) => {
              className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white text-[10px] font-black uppercase tracking-[0.3em] transition-all transform active:scale-95 shadow-sm"
            >
              {(!user) ? (
-                <>SIGN UP ACCOUNT <HiArrowRight className="w-4 h-4" /></>
+                <>Sign Up Account <HiArrowRight className="w-4 h-4" /></>
              ) : (
-                <>READ POST <HiArrowRight className="w-4 h-4" /></>
+                <>Read Post <HiArrowRight className="w-4 h-4" /></>
              )}
            </button>
         </div>

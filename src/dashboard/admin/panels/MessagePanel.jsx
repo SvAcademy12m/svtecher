@@ -118,7 +118,7 @@ const MessagePanel = ({ notifications }) => {
                            </a>
                          </div>
                        ) : (
-                         <span className="text-[11px] text-slate-500 font-medium italic">No Phone Provided</span>
+                         <span className="text-[11px] text-slate-500 font-medium ">No Phone Provided</span>
                        )}
                      </div>
                   </td>

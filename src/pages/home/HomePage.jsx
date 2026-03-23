@@ -7,6 +7,7 @@ import {
   HiPhone, HiLocationMarker, HiCheckCircle, HiSupport, HiPlay, HiSearch,
   HiUserGroup, HiShoppingCart
 } from 'react-icons/hi';
+import { FaCalculator, FaTelegram, FaWhatsapp, FaInstagram, FaTiktok, FaYoutube } from 'react-icons/fa';
 import { courseService, jobService, blogService, webAppService, userService } from '../../core/services/firestoreService';
 import { CONTACT_INFO } from '../../core/utils/constants';
 import { fadeUp, staggerContainer, popIn } from '../../core/utils/animations';
@@ -29,9 +30,24 @@ const testimonials = [
 
 
 const services = [
-  { title: 'Elite Training', desc: 'Professional bootcamps in SWE, Design, and AI.', icon: HiAcademicCap, color: 'from-blue-600 to-indigo-600' },
-  { title: 'Cloud Solutions', desc: 'Scalable infrastructure for modern enterprises.', icon: HiDesktopComputer, color: 'from-cyan-500 to-blue-500' },
-  { title: 'Cyber Defense', desc: 'Secure your digital assets with advanced protocols.', icon: HiShieldCheck, color: 'from-emerald-500 to-teal-500' },
+  {
+    icon: FaCalculator,
+    title: 'Business Software Training',
+    desc: 'Peachtree, QuickBooks, and IFRS compliance training for business professionals.',
+    color: 'from-blue-600 to-indigo-700',
+  },
+  {
+    icon: HiDesktopComputer,
+    title: 'IT Maintenance & Repair',
+    desc: 'Premium maintenance contracts for all laptop and desktops fleets.',
+    color: 'from-cyan-500 to-blue-600',
+  },
+  {
+    icon: HiGlobe,
+    title: 'Network Installation',
+    desc: 'End-to-end network design and configuration for enterprise infrastructure.',
+    color: 'from-emerald-500 to-teal-600',
+  },
 ];
 
 const HomePage = () => {
@@ -58,47 +74,29 @@ const HomePage = () => {
     unsubs.push(courseService.subscribe((data) => {
       setCourses(data.filter(c => c.status !== 'unpublished').slice(0, 3));
     }));
-    unsubs.push(jobService.getOpen((data) => {
-      setJobs(data.slice(0, 3));
-    }));
-    unsubs.push(webAppService.getActive((data) => setProducts(data.slice(0, 3))));
-    unsubs.push(userService.getAll((data) => {
-      // Logic for counts handled in fetchCounts below
-    }));
-    unsubs.push(blogService.getPublished((data) => {
-      setPosts(data.slice(0, 3));
+    unsubs.push(blogService.subscribe((data) => {
+      setPosts(data.filter(p => p.status === 'published').slice(0, 3));
     }));
 
-    const fetchCounts = async () => {
-      try {
-        const studentCount = await userService.getCountByRole('student');
-        const buyerCount = await userService.getCountByRole('customer');
-        const finderCount = await userService.getCountByRole('jobFinder');
-        const providerCount = await userService.getCountByRole('seller');
-        const allApps = await webAppService.getAll();
-        
-        setCounts({
-          students: studentCount > 0 ? studentCount.toLocaleString() : '2,500',
-          buyers: buyerCount > 0 ? buyerCount.toLocaleString() : '120',
-          finders: finderCount > 0 ? finderCount.toLocaleString() : '850',
-          providers: providerCount > 0 ? providerCount.toLocaleString() : '150',
-          projects: allApps.length > 0 ? allApps.length.toLocaleString() : '500',
-          satisfaction: '98'
-        });
-      } catch (err) {
-        console.error("Stats fetch error:", err);
-      }
-    };
-    fetchCounts();
+    setCounts({
+      students: '2,500+',
+      projects: '450+',
+      buyers: '1,200+',
+      finders: '850+',
+      providers: '150+',
+      satisfaction: '98'
+    });
 
-    return () => unsubs.forEach(u => u());
+    return () => unsubs.forEach(u => typeof u === 'function' && u());
   }, []);
 
 
 
   const copyRefLink = () => {
-    navigator.clipboard.writeText(`svtecher.com/ref/${userData?.name?.replace(/\s+/g, '').toLowerCase() || 'user'}`);
-    alert('Referral link copied to clipboard!');
+    const baseUrl = window.location.origin;
+    const refLink = `${baseUrl}/register?ref=${userData?.uid}`;
+    navigator.clipboard.writeText(refLink);
+    toast.success('Referral link copied to clipboard!');
   };
 
   return (
@@ -122,23 +120,23 @@ const HomePage = () => {
             <span className="text-xs font-black text-blue-700 uppercase tracking-widest">Accelerate Your Tech Journey</span>
           </motion.div>
 
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }} className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-slate-900 tracking-tighter leading-[1.05] max-w-5xl uppercase italic">
+          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }} className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black text-slate-900 tracking-tighter leading-[0.95] max-w-5xl text-center">
             Empowering <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600">Digital</span>
-            <br />Futures.
+            <br />Technology.
           </motion.h1>
 
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="mt-8 text-lg sm:text-xl text-slate-600 max-w-3xl font-bold leading-relaxed uppercase tracking-tight">
-            SVTECH Digital Technology is Ethiopia's premium ecosystem for high-end software development, professional tech training, and elite career placements.
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.4 }} className="mt-8 text-lg sm:text-xl text-slate-600 max-w-4xl font-black leading-relaxed tracking-tight text-center">
+            SvTech Digital Technology is Ethiopia's elite center for business software training (Peachtree, QuickBooks, IFRS) and premium IT maintenance services.
           </motion.p>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }} className="mt-10 flex flex-col sm:flex-row gap-4">
-            <button onClick={() => navigate('/register')} className="group relative inline-flex items-center justify-center px-8 py-4 font-black text-white bg-gradient-to-r from-blue-700 to-indigo-600 rounded-2xl overflow-hidden shadow-2xl shadow-blue-500/25 transition-all hover:scale-105 active:scale-95">
-              <span className="relative z-10 flex items-center gap-2 uppercase tracking-widest text-xs">Get Started Free <HiArrowRight className="group-hover:translate-x-1 transition-transform" /></span>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }} className="mt-10 flex flex-col sm:flex-row gap-4 items-center">
+            <button onClick={() => navigate('/register')} className="group relative inline-flex items-center justify-center px-8 py-5 font-black text-white bg-gradient-to-r from-blue-700 to-indigo-600 rounded-2xl overflow-hidden shadow-2xl shadow-blue-500/25 transition-all hover:scale-105 active:scale-95">
+              <span className="relative z-10 flex items-center gap-3 tracking-widest text-sm">Get Started Free <HiArrowRight className="group-hover:translate-x-1 transition-transform w-5 h-5" /></span>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </button>
-            <button onClick={() => setSearchOpen(true)} className="inline-flex items-center justify-center gap-3 px-8 py-4 font-black text-slate-700 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 shadow-lg shadow-slate-100 transition-all hover:scale-105 active:scale-95">
-              <HiSearch className="w-5 h-5 text-blue-600" /> 
-              <span className="uppercase tracking-widest text-xs">Search Gateway</span>
+            <button onClick={() => setSearchOpen(true)} className="inline-flex items-center justify-center gap-3 px-8 py-5 font-black text-slate-700 bg-white border border-slate-200 rounded-2xl hover:bg-slate-50 shadow-lg shadow-slate-100 transition-all hover:scale-105 active:scale-95 border-b-4 border-slate-200">
+              <HiSearch className="w-6 h-6 text-blue-600" /> 
+              <span className="tracking-widest text-sm">Search Gateway</span>
               <kbd className="hidden sm:block px-2 py-1 bg-slate-100 rounded-lg text-[10px] text-slate-400 font-black">⌘ K</kbd>
             </button>
           </motion.div>
@@ -166,9 +164,9 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#3b82f608_1px,transparent_1px),linear-gradient(to_bottom,#3b82f608_1px,transparent_1px)] bg-[size:40px_40px]" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div {...fadeUp} className="text-center mb-16">
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Our Impact</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mt-3 tracking-tighter">
-              Powering Ethiopia's <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Digital Future</span>
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em]">Strategic Impact</span>
+            <h2 className="text-5xl sm:text-6xl md:text-8xl font-black text-slate-900 mt-3 tracking-tighter leading-none">
+              Powering Ethiopia's <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Digital Excellence</span>
             </h2>
           </motion.div>
           <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true }} className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -204,11 +202,16 @@ const HomePage = () => {
               <p className="text-slate-500 font-medium leading-relaxed mb-8">
                 Share the SVTECH vision with your network. Invite friends to join our courses or marketplace and earn premium credits and exclusive access.
               </p>
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-8">
-                <code className="flex-1 text-sm font-black text-blue-700 truncate">svtecher.com/ref/{userData?.name?.replace(/\s+/g, '').toLowerCase() || 'user'}</code>
+              <div className="flex flex-col sm:flex-row items-center gap-4 p-5 bg-slate-50 rounded-3xl border border-slate-100 mb-8 overflow-hidden">
+                <div className="flex-1 min-w-0 w-full">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Your Unique Invite Link</p>
+                  <code className="block w-full text-xs font-black text-blue-700 truncate bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+                    {window.location.origin}/register?ref={userData?.uid?.slice(0, 8)}...
+                  </code>
+                </div>
                 <button 
                   onClick={copyRefLink}
-                  className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-700 transition-all active:scale-95"
+                  className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white text-[10px] font-black uppercase rounded-xl hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20 shrink-0"
                 >
                   Copy Link
                 </button>
@@ -227,11 +230,11 @@ const HomePage = () => {
           <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
             <div className="max-w-2xl text-left">
               <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] mb-4 block">Official Feed</span>
-              <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter uppercase italic">
+              <h2 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tighter">
                 Featured <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600">Knowledge</span>
               </h2>
-              <p className="text-slate-500 mt-4 text-lg font-bold uppercase tracking-tight leading-none">
-                Direct insights from the SVTECH Admin Terminal.
+              <p className="text-slate-500 mt-4 text-xl font-black tracking-tight leading-none">
+                Direct insights from the SvTech Digital Technology Terminal.
               </p>
             </div>
             <button onClick={() => navigate('/blog')} className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-slate-900 text-white font-black hover:bg-blue-600 transition-all uppercase text-xs tracking-widest flex-shrink-0 shadow-2xl">
@@ -245,49 +248,22 @@ const HomePage = () => {
             ))}
             {posts.length === 0 && (
               <div className="col-span-full py-20 text-center bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200">
-                <p className="text-slate-400 font-black uppercase tracking-widest text-xs italic">Syncing with secure terminal... No data returned.</p>
+                <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Syncing with secure terminal... No data returned.</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* ─── DOWNLOAD & ECOSYSTEM ──────────────────── */}
-      {products.length > 0 && (
-        <section className="py-32 relative bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-                <div className="max-w-2xl">
-                   <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight uppercase">
-                      Premium <span className="text-blue-600">Marketplace</span>
-                   </h2>
-                   <p className="mt-6 text-lg text-slate-500 font-medium leading-relaxed">
-                      Acquire battle-tested <span className="text-slate-900 font-black">Accounting Softwares</span>, enterprise source codes, and ready-to-deploy digital assets to transform your business operations.
-                   </p>
-                </div>
-                <button onClick={() => navigate('/services')} className="px-8 py-4 rounded-2xl bg-slate-900 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-slate-900/20 active:scale-95">
-                   Enter Marketplace
-                </button>
-             </motion.div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {products.map(product => (
-                   <ProductCard key={product.id} product={product} />
-                ))}
-             </div>
-          </div>
-        </section>
-      )}
-
       {/* ─── SERVICES ─────────────────────────── */}
       <section className="py-32 relative bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div {...fadeUp} className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-              A Complete <span className="text-blue-600">Ecosystem</span>
+            <h2 className="text-5xl sm:text-6xl font-black text-slate-900 tracking-tight">
+              Focused <span className="text-blue-600">Expertise</span>
             </h2>
-            <p className="mt-6 text-lg text-slate-500 font-medium">
-              SVTech bridges the gap between learning and doing. Get trained by industry veterans and instantly apply your skills on real-world projects.
+            <p className="mt-6 text-xl text-slate-500 font-black">
+              SvTech Digital Technology bridges the gap between financial expertise and technical reliability. Get trained by experts and ensure your infrastructure never fails.
             </p>
           </motion.div>
 
@@ -337,33 +313,12 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ─── FEATURED COURSES ──────────────────── */}
-      {courses.length > 0 && (
-        <section className="py-24 bg-slate-900 border-y border-white/5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <motion.div {...fadeUp} className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-              <div className="max-w-2xl text-left">
-                <span className="text-indigo-400 font-black tracking-[0.4em] text-[10px] uppercase block mb-4">Official Curriculum</span>
-                <h2 className="text-4xl sm:text-5xl font-black text-white mt-3 leading-tight uppercase tracking-tighter italic">Elite Tech Courses</h2>
-                <p className="text-slate-400 mt-4 text-lg font-bold uppercase tracking-tight">Master In-Demand Skills With Our Comprehensive, Project-Based Curriculums.</p>
-              </div>
-              <button onClick={() => navigate('/courses')} className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-white/5 text-white font-black hover:bg-white/10 transition-colors flex-shrink-0 uppercase text-xs tracking-widest border border-white/10 shadow-2xl">
-                View Catalog <HiArrowRight />
-              </button>
-            </motion.div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {courses.map(course => <CourseCard key={course.id} course={course} />)}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ─── TESTIMONIALS ─────────────────────── */}
       <section className="py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div {...fadeUp} className="text-center mb-20">
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight uppercase">
+            <h2 className="text-6xl sm:text-7xl md:text-9xl font-black text-slate-900 tracking-tighter leading-none">
               Trusted by <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Visionaries</span>
             </h2>
           </motion.div>
@@ -372,7 +327,7 @@ const HomePage = () => {
               <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.5 }} className="p-10 rounded-[2.5rem] bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-2xl transition-all">
                 <div>
                   <div className="flex gap-1 mb-6">{[...Array(5)].map((_, j) => <HiStar key={j} className="w-5 h-5 text-amber-400" />)}</div>
-                  <p className="text-slate-600 text-lg leading-relaxed font-black uppercase italic">"{item.text}"</p>
+                  <p className="text-slate-600 text-lg leading-relaxed font-black uppercase">"{item.text}"</p>
                 </div>
                 <div className="flex items-center gap-4 mt-10">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-lg shadow-md">{item.avatar}</div>
@@ -391,8 +346,8 @@ const HomePage = () => {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 object-cover" />
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center bg-[#151a33]/50 backdrop-blur-xl p-16 rounded-[40px] border border-white/10 shadow-2xl">
           <motion.div {...fadeUp} className="w-20 h-20 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-lg shadow-cyan-500/50 transform rotate-12"><HiDesktopComputer className="w-10 h-10 text-white -rotate-12" /></motion.div>
-          <motion.h2 {...fadeUp} transition={{ delay: 0.1 }} className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-6 tracking-tight uppercase italic">Ready to Build <br/> The Future?</motion.h2>
-          <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-blue-200 text-xl font-black uppercase italic max-w-2xl mx-auto mb-10 leading-relaxed tracking-tight">Join the elite network of developers, designers, and innovators at SVTech. Register today and instantly access premium tools and courses.</motion.p>
+          <motion.h2 {...fadeUp} transition={{ delay: 0.1 }} className="text-5xl sm:text-6xl lg:text-7xl font-black text-white mb-6 tracking-tight">Ready to Build <br/> The Future?</motion.h2>
+          <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-blue-200 text-2xl font-black max-w-3xl mx-auto mb-10 leading-relaxed tracking-tight text-center">Join the elite network of business professionals and IT experts at SvTech Digital Technology. Register today and instantly access premium training and support.</motion.p>
           <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="flex flex-wrap justify-center gap-4">
             <button onClick={() => navigate('/register')} className="px-10 py-5 bg-white text-slate-900 rounded-2xl font-black text-lg hover:scale-105 hover:bg-blue-50 transition-all shadow-xl uppercase tracking-widest">Create Free Account</button>
             <button onClick={() => navigate('/contact')} className="px-10 py-5 bg-white/10 text-white border border-white/20 rounded-2xl font-black text-lg hover:bg-white/20 backdrop-blur-md transition-all uppercase tracking-widest">Talent Consultation</button>

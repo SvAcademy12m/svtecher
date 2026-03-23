@@ -1,0 +1,14 @@
+# robots.txt for yegar.com
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /redirect
+Disallow: /api/
+
+# Google Bot
+User-agent: Googlebot
+Allow: /
+Disallow: /dashboard/
+
+# Sitemap
+Sitemap: https://yegar.com/sitemap.xml

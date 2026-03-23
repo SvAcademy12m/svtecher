@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,6 +12,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import RoleRedirect from './routes/RoleRedirect';
 import Spinner from './components/ui/Spinner';
 import ScrollToTop from './components/utils/ScrollToTop';
+import { AnimatePresence, motion } from 'framer-motion';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/home/HomePage'));
@@ -32,6 +33,9 @@ const StudentDashboard = lazy(() => import('./dashboard/student/StudentDashboard
 const JobFinderDashboard = lazy(() => import('./dashboard/jobFinder/JobFinderDashboard'));
 const TrainerDashboard = lazy(() => import('./dashboard/trainer/TrainerDashboard'));
 const CustomerDashboard = lazy(() => import('./dashboard/customer/CustomerDashboard'));
+const SupportDashboard = lazy(() => import('./dashboard/support/SupportDashboard'));
+const EmployerDashboard = lazy(() => import('./dashboard/employer/EmployerDashboard'));
+const SellerDashboard = lazy(() => import('./dashboard/seller/SellerDashboard'));
 
 const App = () => {
   return (
@@ -42,76 +46,101 @@ const App = () => {
           <ThemeProvider>
             <AuthProvider>
               <Suspense fallback={<Spinner fullScreen />}>
-              <Routes>
-                {/* Everything wrapped in AppLayout for Progressive Web App unification */}
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/services" element={<ServicesPage />} />
-                  <Route path="/courses" element={<CoursesPage />} />
-                  <Route path="/jobs" element={<JobsPage />} />
-                  <Route path="/blog" element={<BlogPage />} />
-                  <Route path="/blog/:id" element={<PostPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/profile" element={
-                    <ProtectedRoute>
-                      <ProfilePage />
-                    </ProtectedRoute>
-                  } />
-                  
-                  {/* Auth */}
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<RegisterPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  
-                  {/* Role redirect */}
-                  <Route path="/redirect" element={<RoleRedirect />} />
-                  <Route path="/dashboard" element={<RoleRedirect />} />
+                <Routes>
+                  <Route element={<AppLayout />}>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/services" element={<ServicesPage />} />
+                    <Route path="/courses" element={<CoursesPage />} />
+                    <Route path="/jobs" element={<JobsPage />} />
+                    <Route path="/blog" element={<BlogPage />} />
+                    <Route path="/blog/:id" element={<PostPage />} />
+                    <Route path="/about" element={<AboutPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile/:uid" element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<RegisterPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    
+                    <Route path="/redirect" element={<RoleRedirect />} />
+                    <Route path="/dashboard" element={<RoleRedirect />} />
 
-                  {/* Protected dashboards */}
-                  <Route
-                    path="/dashboard/admin"
-                    element={
-                      <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/student"
-                    element={
-                      <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
-                        <StudentDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/jobs"
-                    element={
-                      <ProtectedRoute allowedRoles={[ROLES.JOB_FINDER]}>
-                        <JobFinderDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/trainer"
-                    element={
-                      <ProtectedRoute allowedRoles={[ROLES.TRAINER]}>
-                        <TrainerDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard/customer"
-                    element={
-                      <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
-                        <CustomerDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Route>
-              </Routes>
-            </Suspense>
+                    <Route
+                      path="/dashboard/admin"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/student"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.STUDENT]}>
+                          <StudentDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/jobs"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.JOB_FINDER]}>
+                          <JobFinderDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/trainer"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.TRAINER]}>
+                          <TrainerDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/customer"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+                          <CustomerDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/support"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.SUPPORT]}>
+                          <SupportDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/employer"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.EMPLOYER]}>
+                          <EmployerDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard/seller"
+                      element={
+                        <ProtectedRoute allowedRoles={[ROLES.SELLER]}>
+                          <SellerDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Route>
+                </Routes>
+              </Suspense>
 
               <ToastContainer
                 position="top-right"

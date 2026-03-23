@@ -1,51 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { HiHome, HiAcademicCap, HiViewGrid, HiUser } from 'react-icons/hi';
+import { HiHome, HiAcademicCap, HiSupport, HiMenu } from 'react-icons/hi';
 import { motion } from 'framer-motion';
+import MobileMenuDrawer from './MobileMenuDrawer';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MobileBottomNav = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { t } = useLanguage();
+
   const navItems = [
-    { to: '/', icon: HiHome, label: 'HOME' },
-    { to: '/courses', icon: HiAcademicCap, label: 'COURSES' },
-    { to: '/services', icon: HiViewGrid, label: 'SERVICES' },
-    { to: '/profile', icon: HiUser, label: 'PROFILE' },
+    { to: '/', icon: HiHome, label: 'Home' },
+    { to: '/services', icon: HiSupport, label: 'Services' },
+    { to: '/courses', icon: HiAcademicCap, label: 'Courses' },
+  ];
+
+  const footerSections = [
+    {
+      title: t('services'),
+      links: [
+        { label: 'Business Software Training', to: '/services' },
+        { label: 'IT Maintenance & Repair', to: '/services' },
+        { label: 'Network Installation', to: '/services' },
+      ]
+    },
+    {
+      title: t('company'),
+      links: [
+        { label: t('aboutUs'), to: '/about' },
+        { label: t('techBlog'), to: '/blog' },
+        { label: 'Digital Curriculum', to: '/courses' },
+        { label: t('contactUs'), to: '/contact' },
+      ]
+    },
+    {
+      title: t('support'),
+      links: [
+        { label: t('helpCenter'), to: '#' },
+        { label: t('termsOfService'), to: '#' },
+        { label: t('privacyPolicy'), to: '#' },
+      ]
+    }
   ];
 
   return (
-    <motion.div 
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden px-3 pb-5 pt-8 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none"
-    >
-      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border border-slate-200 dark:border-white/10 rounded-[2rem] p-1.5 flex items-center justify-around shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.3)] pointer-events-auto max-w-sm mx-auto">
-        {navItems.map((item, i) => (
-          <NavLink
-            key={i}
-            to={item.to}
-            className={({ isActive }) => `
-              relative flex flex-col items-center gap-1 min-w-[60px] py-2 rounded-[1.5rem] transition-all duration-500 group
-              ${isActive ? 'text-blue-600 dark:text-white' : 'text-slate-400 dark:text-slate-500 hover:text-blue-500'}
-            `}
+    <>
+      <nav className="fixed bottom-0 left-0 right-0 z-[100] lg:hidden">
+        {/* Glossy Backdrop */}
+        <div className="absolute inset-0 bg-white/95 dark:bg-[#0e1225]/95 backdrop-blur-3xl border-t border-slate-200/50 dark:border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]" />
+        
+        <div className="relative flex items-center justify-around h-20 px-4">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => 
+                `flex flex-col items-center justify-center transition-all duration-300 ${
+                  isActive ? 'text-blue-600 scale-110' : 'text-slate-400'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <div className={`relative p-3 rounded-2xl transition-all ${
+                  isActive ? 'bg-blue-600/10' : ''
+                }`}>
+                  <item.icon className="w-7 h-7" />
+                  {isActive && (
+                    <motion.div 
+                      layoutId="nav-glow"
+                      className="absolute inset-0 bg-blue-600/20 blur-xl rounded-full"
+                    />
+                  )}
+                </div>
+              )}
+            </NavLink>
+          ))}
+
+          {/* Menu Button */}
+          <button
+            onClick={() => setIsMenuOpen(true)}
+            className={`flex flex-col items-center justify-center transition-all duration-300 ${
+              isMenuOpen ? 'text-blue-600 scale-110' : 'text-slate-400'
+            }`}
           >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <motion.div 
-                    layoutId="activeGlow"
-                    className="absolute inset-0 bg-blue-50 dark:bg-gradient-to-br dark:from-blue-600 dark:to-indigo-700 rounded-[1.2rem] -z-10 shadow-inner"
-                    transition={{ type: "spring", stiffness: 350, damping: 25 }}
-                  />
-                )}
-                <item.icon className={`w-6 h-6 transition-all duration-500 ${isActive ? 'scale-110' : 'group-hover:scale-110 group-active:scale-95'}`} />
-                <span className={`text-[8px] font-black tracking-widest uppercase transition-all ${isActive ? 'opacity-100 translate-y-0' : 'opacity-60 translate-y-0.5'}`}>
-                  {item.label}
-                </span>
-              </>
-            )}
-          </NavLink>
-        ))}
-      </div>
-    </motion.div>
+            <div className={`relative p-3 rounded-2xl transition-all ${
+              isMenuOpen ? 'bg-blue-600/10' : ''
+            }`}>
+              <HiMenu className="w-7 h-7" />
+            </div>
+          </button>
+        </div>
+        
+        {/* Safe Area Padding for iOS */}
+        <div className="h-[env(safe-area-inset-bottom)]" />
+      </nav>
+
+      <MobileMenuDrawer 
+        isOpen={isMenuOpen} 
+        onClose={() => setIsMenuOpen(false)} 
+        footerSections={footerSections}
+      />
+    </>
   );
 };
 

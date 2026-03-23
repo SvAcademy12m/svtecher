@@ -95,7 +95,7 @@ const PostPage = () => {
               <span className="bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">{post.category || 'Tech Culture'}</span>
               <span className="flex items-center gap-1"><HiCalendar className="w-3.5 h-3.5" /> {formatDate(post.createdAt)}</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tighter uppercase italic">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 leading-tight tracking-tighter uppercase">
               {post.title}
             </h1>
             <div className="flex items-center gap-4 py-6 border-y border-slate-100">
@@ -117,7 +117,7 @@ const PostPage = () => {
           )}
 
           {/* Content */}
-          <div className="prose prose-lg max-w-none text-slate-700 font-medium leading-relaxed uppercase tracking-tight italic">
+          <div className="prose prose-lg max-w-none text-slate-700 font-medium leading-relaxed uppercase tracking-tight">
             <p className="whitespace-pre-wrap">{post.content}</p>
           </div>
 
@@ -126,7 +126,7 @@ const PostPage = () => {
           {/* Comments Section */}
           <section className="space-y-12 pt-10">
             <div className="flex items-center justify-between">
-               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic flex items-center gap-3">
+               <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
                  <HiChatAlt2 className="text-blue-600" /> Conversation <span className="text-slate-300">({comments.length})</span>
                </h3>
                {!user && <p className="text-[10px] font-black text-slate-400 uppercase">Sign in to join the conversation</p>}
@@ -140,7 +140,7 @@ const PostPage = () => {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="SYNC YOUR THOUGHTS..."
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-6 text-sm font-bold text-slate-800 placeholder:text-slate-300 outline-none focus:border-blue-600/20 focus:bg-white transition-all uppercase italic"
+                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-6 text-sm font-bold text-slate-800 placeholder:text-slate-300 outline-none focus:border-blue-600/20 focus:bg-white transition-all uppercase"
                 />
                 <button 
                   disabled={submitting || !commentText.trim()}
@@ -174,7 +174,7 @@ const PostPage = () => {
                          <p className="text-[9px] font-bold text-slate-300 lowercase">{comment.createdAt ? formatDateTime(comment.createdAt) : 'just now'}</p>
                       </div>
                       <div className="bg-slate-50/50 p-5 rounded-2xl group-hover:bg-slate-50 transition-colors">
-                         <p className="text-sm text-slate-600 font-bold leading-relaxed uppercase tracking-tight italic">
+                         <p className="text-sm text-slate-600 font-bold leading-relaxed uppercase tracking-tight">
                            {comment.text}
                          </p>
                       </div>
@@ -183,7 +183,7 @@ const PostPage = () => {
               ))}
               {comments.length === 0 && (
                 <div className="py-12 bg-slate-50 border-2 border-dashed border-slate-100 rounded-[2.5rem] text-center">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">The terminal is silent. Be the first to start the protocol.</p>
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">The terminal is silent. Be the first to start the protocol.</p>
                 </div>
               )}
             </div>

@@ -1,7 +1,8 @@
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
   getDoc, getDocs, query, where, orderBy, onSnapshot,
-  serverTimestamp, getCountFromServer, setDoc
+  serverTimestamp, getCountFromServer, setDoc,
+  arrayUnion, arrayRemove, increment
 } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
 
@@ -146,4 +147,70 @@ export const webAppService = {
 export const notificationService = {
   getUnread: (uid, cb) => subscribeToCollection('notifications', (docs) => cb(docs.filter(d => d.userId === uid && d.read === false))),
   markRead: (id) => updateData('notifications', id, { read: true, readAt: new Date() }),
+};
+
+export const serviceRequestService = {
+  subscribe: (callback) => subscribeToCollection('service_requests', [orderBy('createdAt', 'desc')], callback),
+  update: (id, data) => updateData('service_requests', id, data),
+  'delete': (id) => deleteData('service_requests', id),
+};
+
+// ─── Social Mechanics ────────────────────────
+export const socialService = {
+  toggleFollowUser: async (currentUserId, targetUserId) => {
+    const currentUserRef = doc(db, 'users', currentUserId);
+    const targetUserRef = doc(db, 'users', targetUserId);
+    
+    const currSnap = await getDoc(currentUserRef);
+    if (!currSnap.exists()) return false;
+    
+    const followingList = currSnap.data().following || [];
+    const isFollowing = followingList.includes(targetUserId);
+    
+    if (isFollowing) {
+      await updateDoc(currentUserRef, { following: arrayRemove(targetUserId), followingCount: increment(-1) });
+      await updateDoc(targetUserRef, { followers: arrayRemove(currentUserId), followersCount: increment(-1) });
+      return false; // Result is unfollowed
+    } else {
+      await updateDoc(currentUserRef, { following: arrayUnion(targetUserId), followingCount: increment(1) });
+      await updateDoc(targetUserRef, { followers: arrayUnion(currentUserId), followersCount: increment(1) });
+      return true; // Result is followed
+    }
+  },
+  
+  toggleLikeCourse: async (courseId, userId) => {
+     const ref = doc(db, 'courses', courseId);
+     const snap = await getDoc(ref);
+     if (!snap.exists()) return;
+     const data = snap.data();
+     const likes = data.likes || [];
+     const dislikes = data.dislikes || [];
+     
+     if (likes.includes(userId)) {
+        await updateDoc(ref, { likes: arrayRemove(userId), likesCount: increment(-1) });
+     } else {
+        await updateDoc(ref, { 
+           likes: arrayUnion(userId), likesCount: increment(1),
+           ...(dislikes.includes(userId) ? { dislikes: arrayRemove(userId), dislikesCount: increment(-1) } : {})
+        });
+     }
+  },
+
+  toggleDislikeCourse: async (courseId, userId) => {
+     const ref = doc(db, 'courses', courseId);
+     const snap = await getDoc(ref);
+     if (!snap.exists()) return;
+     const data = snap.data();
+     const likes = data.likes || [];
+     const dislikes = data.dislikes || [];
+     
+     if (dislikes.includes(userId)) {
+        await updateDoc(ref, { dislikes: arrayRemove(userId), dislikesCount: increment(-1) });
+     } else {
+        await updateDoc(ref, { 
+           dislikes: arrayUnion(userId), dislikesCount: increment(1),
+           ...(likes.includes(userId) ? { likes: arrayRemove(userId), likesCount: increment(-1) } : {})
+        });
+     }
+  }
 };

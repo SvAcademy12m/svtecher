@@ -56,7 +56,7 @@ const JobCard = ({ job, onApply, showActions = false }) => {
           </p>
         )}
 
-        <p className="text-[13px] text-blue-100/60 line-clamp-3 leading-relaxed mb-8 font-bold uppercase tracking-tight italic">
+        <p className="text-[13px] text-blue-100/60 line-clamp-3 leading-relaxed mb-8 font-bold uppercase tracking-tight">
           "{job.description}"
         </p>
 

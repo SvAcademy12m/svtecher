@@ -80,8 +80,8 @@ const WebAppPanel = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h3 className="text-2xl font-black text-slate-900">{t('webApps')}</h3>
-          <p className="text-sm text-slate-500 mt-1">Manage websites, web apps, mobile apps & digital products</p>
+          <h3 className="text-3xl font-black text-blue-900 dark:text-white tracking-tight">{t('webApps')}</h3>
+          <p className="text-sm font-black text-blue-600 dark:text-white tracking-widest mt-1">Manage Websites, Web Apps, Mobile Apps & Digital Products</p>
         </div>
         <Button icon={HiPlus} onClick={() => { setForm(initialForm); setEditId(null); setShowForm(true); }}>
           Add Product
@@ -90,22 +90,22 @@ const WebAppPanel = () => {
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Products</p>
-          <p className="text-3xl font-black text-slate-900 mt-1">{items.length}</p>
+        <div className="bg-white dark:bg-[#151a30] rounded-2xl border border-slate-100 dark:border-white/5 p-5">
+          <p className="text-[10px] font-black text-slate-400 dark:text-white/40 tracking-wider">Total Products</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{items.length}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Websites</p>
-          <p className="text-3xl font-black text-slate-900 mt-1">{items.filter(i => i.type === 'website').length}</p>
+        <div className="bg-white dark:bg-[#151a30] rounded-2xl border border-slate-100 dark:border-white/5 p-5">
+          <p className="text-[10px] font-black text-slate-400 dark:text-white/40 tracking-wider">Websites Matrix</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{items.filter(i => i.type === 'website').length}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-100 p-5">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Apps</p>
-          <p className="text-3xl font-black text-slate-900 mt-1">{items.filter(i => i.type === 'mobile_app' || i.type === 'web_app').length}</p>
+        <div className="bg-white dark:bg-[#151a30] rounded-2xl border border-slate-100 dark:border-white/5 p-5">
+          <p className="text-[10px] font-black text-slate-400 dark:text-white/40 tracking-wider">Application Nodes</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white mt-1">{items.filter(i => i.type === 'mobile_app' || i.type === 'web_app').length}</p>
         </div>
         <div className="bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl p-5 text-white">
-          <p className="text-xs font-bold text-blue-100 uppercase tracking-wider">Portfolio Value</p>
+          <p className="text-[10px] font-black text-blue-100 tracking-wider">Portfolio Net Worth</p>
           <p className="text-2xl font-black mt-1">{formatPrice(totalValue)}</p>
-          <p className="text-[10px] text-blue-200 mt-0.5">{formatDualPrice(totalValue).usd}</p>
+          <p className="text-[10px] text-blue-50 font-black mt-0.5">{formatDualPrice(totalValue).usd}</p>
         </div>
       </div>
 

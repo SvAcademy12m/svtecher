@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../../core/firebase/firebase';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { formatDateTime } from '../../../core/utils/formatters';
-import { HiCash, HiArrowUp, HiArrowDown, HiPlus, HiDownload, HiPaperAirplane, HiPhone, HiMail } from 'react-icons/hi';
+import { 
+  HiCash, HiArrowUp, HiArrowDown, HiPlus, HiDownload, HiPaperAirplane, 
+  HiCalendar, HiChartBar, HiCollection, HiScale, HiTrendingUp, HiTrendingDown,
+  HiPencil, HiTrash
+} from 'react-icons/hi';
 import Badge from '../../../components/ui/Badge';
-import Button from '../../../components/ui/Button';
 import Modal from '../../../components/ui/Modal';
-import StatCard from '../../../components/cards/StatCard';
 import { toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -16,361 +18,447 @@ import 'jspdf-autotable';
 
 const TransactionPanel = () => {
   const { t } = useLanguage();
-  const { formatPrice, formatDualPrice } = useCurrency();
+  const { formatDualPrice, formatPrice } = useCurrency();
   const [transactions, setTransactions] = useState([]);
-  const [filter, setFilter] = useState('all');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showMessageForm, setShowMessageForm] = useState(false);
-  const [form, setForm] = useState({ userId: '', userName: '', amount: '', type: 'deposit', description: '', method: 'bank', userPhone: '', userEmail: '' });
-  const [messageForm, setMessageForm] = useState({ targetUserId: '', targetUserName: '', title: '', message: '' });
+  const [filter, setFilter] = useState('all'); 
+  const [timeRange, setTimeRange] = useState('all'); 
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [form, setForm] = useState({ userName: '', amount: '', type: 'income', description: '', method: 'bank', userPhone: '', userEmail: '' });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'));
+    let q = query(collection(db, 'transactions'), orderBy('createdAt', 'desc'));
+    
     const unsub = onSnapshot(q, (snap) => {
-      setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      const now = new Date();
+      if (timeRange === 'today') {
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        data = data.filter(tr => tr.createdAt?.seconds * 1000 >= todayStart);
+      } else if (timeRange === 'month') {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+        data = data.filter(tr => tr.createdAt?.seconds * 1000 >= monthStart);
+      } else if (timeRange === 'year') {
+        const yearStart = new Date(now.getFullYear(), 0, 1).getTime();
+        data = data.filter(tr => tr.createdAt?.seconds * 1000 >= yearStart);
+      }
+
+      setTransactions(data);
     });
     return () => unsub();
-  }, []);
+  }, [timeRange]);
 
-  const totalDeposits = transactions.filter(t => t.type === 'deposit' && t.status !== 'failed')
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal' && t.status !== 'failed')
-    .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-  const netRevenue = totalDeposits - totalWithdrawals;
+  // Categorization Logic
+  const categorized = useMemo(() => {
+    return transactions.map(tr => {
+      let category = 'income';
+      if (['withdrawal', 'expense', 'payout'].includes(tr.type)) category = 'expense';
+      if (['liability', 'debt'].includes(tr.type)) category = 'liability';
+      if (['deposit', 'course_payment', 'employer_payment', 'income', 'app_sale'].includes(tr.type)) category = 'income';
+      return { ...tr, category };
+    });
+  }, [transactions]);
 
-  const filtered = filter === 'all' ? transactions : transactions.filter(tr => tr.type === filter);
+  const stats = useMemo(() => {
+    const { income, expenses, liabilities } = categorized.reduce((acc, tr) => {
+      const amt = Number(tr.amount) || 0;
+      if (tr.category === 'income') acc.income += amt;
+      if (tr.category === 'expense') acc.expenses += amt;
+      if (tr.category === 'liability') acc.liabilities += amt;
+      return acc;
+    }, { income: 0, expenses: 0, liabilities: 0 });
 
-  const handleAdd = async (e) => {
+    const margin = income > 0 ? ((income - expenses) / income) * 100 : 0;
+    return { income, expenses, liabilities, net: income - expenses - liabilities, margin };
+  }, [categorized]);
+
+  const filtered = filter === 'all' ? categorized : categorized.filter(tr => tr.category === filter);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await addDoc(collection(db, 'transactions'), {
-        ...form,
-        amount: Number(form.amount),
-        status: 'completed',
-        createdAt: serverTimestamp(),
-      });
-      toast.success('Transaction successfully recorded!');
-      setForm({ userId: '', userName: '', amount: '', type: 'deposit', description: '', method: 'bank', userPhone: '', userEmail: '' });
-      setShowAddForm(false);
+      if (editId) {
+        await updateDoc(doc(db, 'transactions', editId), {
+          ...form,
+          amount: Number(form.amount),
+          updatedAt: serverTimestamp(),
+        });
+        toast.success('Transaction updated');
+      } else {
+        await addDoc(collection(db, 'transactions'), {
+          ...form,
+          amount: Number(form.amount),
+          status: 'completed',
+          createdAt: serverTimestamp(),
+        });
+        toast.success('Transaction added to ledger');
+      }
+      setForm({ userName: '', amount: '', type: 'income', description: '', method: 'bank', userPhone: '', userEmail: '' });
+      setShowForm(false);
+      setEditId(null);
     } catch {
-      toast.error('Failed to record transaction');
+      toast.error('Failed to sync transaction');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateStatus = async (id, newStatus) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm("Permanently delete this transaction?")) return;
     try {
-       const { updateDoc, doc } = await import('firebase/firestore');
-       await updateDoc(doc(db, 'transactions', id), { status: newStatus });
-       toast.success(`Transaction marked as ${newStatus}`);
+      await deleteDoc(doc(db, 'transactions', id));
+      toast.success("Transaction deleted");
     } catch {
-       toast.error('Failed to update status');
+      toast.error("Failed to delete transaction");
     }
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      // Create a notification for the target user
-      await addDoc(collection(db, 'notifications'), {
-        userId: messageForm.targetUserId,
-        title: messageForm.title || 'Admin Message regarding your transaction',
-        message: messageForm.message,
-        read: false,
-        type: 'admin_message',
-        createdAt: serverTimestamp(),
+  const exportData = (type) => {
+    if (type === 'excel') {
+      const exportList = filtered.map(tr => ({
+        'Date': tr.createdAt ? formatDateTime(tr.createdAt) : 'N/A',
+        'Entity Name': tr.userName || 'Generic Client',
+        'Transaction Type': tr.type?.toUpperCase(),
+        'Category': tr.category?.toUpperCase(),
+        'Payment Method': tr.method?.toUpperCase(),
+        'Amount (ETB)': tr.amount,
+        'Status': tr.status?.toUpperCase()
+      }));
+
+      // Add Summary Rows
+      exportList.push({});
+      exportList.push({ 'Entity Name': 'SUMMARY REPORT', 'Amount (ETB)': '' });
+      exportList.push({ 'Entity Name': 'Total Income', 'Amount (ETB)': stats.income });
+      exportList.push({ 'Entity Name': 'Total Expenses', 'Amount (ETB)': stats.expenses });
+      exportList.push({ 'Entity Name': 'Total Liabilities', 'Amount (ETB)': stats.liabilities });
+      exportList.push({ 'Entity Name': 'NET PROFIT', 'Amount (ETB)': stats.net });
+
+      const ws = XLSX.utils.json_to_sheet(exportList);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Financial_Report");
+      XLSX.writeFile(wb, `SVTECH_FINANCIAL_REPORT_${timeRange.toUpperCase()}.xlsx`);
+    } else {
+      const docPdf = new jsPDF();
+      
+      // Branding Header
+      docPdf.setFillColor(30, 58, 138); // blue-900
+      docPdf.rect(0, 0, 210, 40, 'F');
+      
+      docPdf.setTextColor(255, 255, 255);
+      docPdf.setFontSize(24);
+      docPdf.setFont('helvetica', 'bold');
+      docPdf.text('SVTECH DIGITAL', 14, 20);
+      
+      docPdf.setFontSize(10);
+      docPdf.setFont('helvetica', 'normal');
+      docPdf.text('OFFICIAL FINANCIAL AUDIT REPORT', 14, 30);
+      docPdf.text(`Generation Date: ${new Date().toLocaleString()}`, 130, 30);
+
+      // Body
+      docPdf.autoTable({
+        head: [['Date', 'Entity', 'Type', 'Category', 'Amount (ETB)', 'Status']],
+        body: filtered.map(tr => [
+          tr.createdAt ? formatDateTime(tr.createdAt) : 'N/A', 
+          tr.userName || 'N/A', 
+          tr.type?.toUpperCase() || 'N/A',
+          tr.category?.toUpperCase() || 'N/A',
+          formatPrice(tr.amount), 
+          tr.status?.toUpperCase()
+        ]),
+        startY: 50,
+        theme: 'grid',
+        headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [248, 250, 252] }
       });
-      toast.success(`Message sent to ${messageForm.targetUserName}!`);
-      setShowMessageForm(false);
-      setMessageForm({ targetUserId: '', targetUserName: '', title: '', message: '' });
-    } catch {
-      toast.error('Failed to send message.');
-    } finally {
-      setLoading(false);
+
+      // Footer / Summary
+      const lastY = docPdf.previousAutoTable.finalY + 10;
+      docPdf.setTextColor(30, 58, 138);
+      docPdf.setFontSize(12);
+      docPdf.setFont('helvetica', 'bold');
+      docPdf.text('REPORT SUMMARY', 14, lastY);
+      
+      docPdf.setFontSize(10);
+      docPdf.setFont('helvetica', 'normal');
+      docPdf.setTextColor(0, 0, 0);
+      docPdf.text(`Total Recorded Income: ${formatPrice(stats.income)}`, 14, lastY + 8);
+      docPdf.text(`Total Recorded Expenses: ${formatPrice(stats.expenses)}`, 14, lastY + 14);
+      docPdf.text(`Total Recorded Liabilities: ${formatPrice(stats.liabilities)}`, 14, lastY + 20);
+      
+      docPdf.setFontSize(12);
+      docPdf.setFont('helvetica', 'bold');
+      docPdf.setTextColor(16, 185, 129); // emerald-500
+      docPdf.text(`NET PLATFORM PROFIT: ${formatPrice(stats.net)}`, 14, lastY + 32);
+
+      // Footer branding
+      docPdf.setFontSize(8);
+      docPdf.setTextColor(150, 150, 150);
+      docPdf.text('This is an electronically generated report from SVTECH Digital Admin Engine. All rights reserved 2026.', 14, 285);
+
+      docPdf.save(`SVTECH_AUDIT_REPORT_${timeRange.toUpperCase()}.pdf`);
     }
-  };
-
-  const openMessageModal = (tr) => {
-    if (!tr.userId) {
-      toast.error('This transaction has no associated User ID to send a message to.');
-      return;
-    }
-    setMessageForm({
-      targetUserId: tr.userId,
-      targetUserName: tr.userName || 'Unknown User',
-      title: 'Regarding your recent transaction',
-      message: `Hello ${tr.userName}, \n\nWe are writing to you regarding your recent ${tr.type} transaction of ${tr.amount} ETB...`
-    });
-    setShowMessageForm(true);
-  };
-
-  const statusBadge = (status) => {
-    const map = { completed: 'success', pending: 'warning', failed: 'danger' };
-    return <Badge variant={map[status] || 'default'} className="text-[10px] font-black uppercase tracking-widest px-3 py-1">{t(status) || status}</Badge>;
-  };
-
-  const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filtered.map(tr => ({
-      Date: tr.createdAt ? formatDateTime(tr.createdAt) : 'N/A',
-      User: tr.userName || 'N/A',
-      Email: tr.userEmail || 'N/A',
-      Phone: tr.userPhone || 'N/A',
-      Type: tr.type || 'N/A',
-      Description: tr.description || 'N/A',
-      Method: tr.method || 'N/A',
-      AmountETB: tr.amount || 0,
-      Status: tr.status || 'N/A'
-    })));
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-    XLSX.writeFile(wb, "Financial_Transactions_Export.xlsx");
-  };
-
-  const exportToPDF = () => {
-    const docPdf = new jsPDF();
-    docPdf.text('Financial Transactions Report', 14, 15);
-    docPdf.autoTable({
-      head: [['Date', 'User', 'Type', 'Desc', 'Amount', 'Status']],
-      body: filtered.map(tr => [
-        tr.createdAt ? formatDateTime(tr.createdAt) : 'N/A', 
-        tr.userName || 'N/A', 
-        tr.type || 'N/A', 
-        (tr.description || '').substring(0, 20), 
-        tr.amount + ' ETB', 
-        tr.status
-      ]),
-      startY: 20,
-    });
-    docPdf.save('Financial_Transactions_Export.pdf');
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
         <div>
-          <h3 className="text-3xl font-black text-blue-900 dark:text-white tracking-tight">{t('transactionHistory')}</h3>
-          <p className="text-sm font-black text-blue-600/50 dark:text-indigo-400/50 uppercase tracking-widest mt-1 tracking-widest uppercase">Ledger Management & Reconciliation</p>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase">{t('financialOverview')}</h2>
+          <p className="text-sm text-gray-400 dark:text-white/40 font-bold uppercase tracking-widest mt-1">Global Audit & Resource Tracking</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={exportToPDF} className="flex items-center gap-2 px-5 py-2.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-2xl text-[11px] font-black uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20 shadow-lg shadow-rose-500/10 group">
-            <HiDownload className="w-4 h-4 group-hover:bounce" /> Export PDF
-          </button>
-          <button onClick={exportToExcel} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-2xl text-[11px] font-black uppercase tracking-wider hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20 shadow-lg shadow-emerald-500/10 group">
-            <HiDownload className="w-4 h-4 group-hover:bounce" /> Export Excel
-          </button>
-          <button onClick={() => setShowAddForm(true)} className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-wider hover:scale-105 transition-all shadow-xl shadow-blue-500/20">
-            <HiPlus className="w-4 h-4" /> New Record
-          </button>
+
+        <div className="flex flex-wrap items-center gap-4">
+           <div className="flex p-1.5 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm">
+              {['today', 'month', 'year', 'all'].map(t => (
+                <button 
+                  key={t}
+                  onClick={() => setTimeRange(t)}
+                  className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${timeRange === t ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-blue-600'}`}
+                >
+                  {t}
+                </button>
+              ))}
+           </div>
+
+           <div className="flex items-center gap-3">
+              <button onClick={() => exportData('pdf')} className="p-4 bg-rose-500 text-white rounded-2xl shadow-xl shadow-rose-500/20 hover:scale-105 transition-all" title="Export PDF">
+                 <HiDownload className="w-5 h-5" />
+              </button>
+              <button onClick={() => exportData('excel')} className="p-4 bg-emerald-500 text-white rounded-2xl shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all" title="Export Excel">
+                 <HiCollection className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => { setShowForm(true); setEditId(null); setForm({ userName: '', amount: '', type: 'income', description: '', method: 'bank', userPhone: '', userEmail: '' }); }} 
+                className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all"
+              >
+                <HiPlus className="w-5 h-5" /> {t('addCourse').replace('Course', 'Entry')}
+              </button>
+           </div>
         </div>
       </div>
 
-      {/* Revenue Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <StatCard icon={HiArrowDown} label={t('deposit') + 's'} value={formatPrice(totalDeposits)} gradient />
-        <StatCard icon={HiArrowUp} label={t('withdrawal') + 's'} value={formatPrice(totalWithdrawals)} />
-        <StatCard icon={HiCash} label="Net Revenue" value={formatPrice(netRevenue)} />
+      {/* Summary Pulse */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+         <StatsPulse icon={HiTrendingUp} label={t('income')} val={stats.income} color="from-emerald-600 to-teal-700" isPrice formatPrice={formatPrice} />
+         <StatsPulse icon={HiTrendingDown} label={t('expenses')} val={stats.expenses} color="from-rose-500 to-pink-600" isPrice formatPrice={formatPrice} />
+         <StatsPulse icon={HiScale} label={t('liabilities')} val={stats.liabilities} color="from-amber-500 to-orange-600" isPrice formatPrice={formatPrice} />
+         <StatsPulse icon={HiChartBar} label="Profit Margin" val={`${stats.margin.toFixed(1)}%`} color="from-indigo-600 to-purple-700" />
+         <StatsPulse icon={HiCash} label={t('netProfit')} val={stats.net} color="from-blue-600 to-indigo-700" isPrice formatPrice={formatPrice} />
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-3">
-        {['all', 'deposit', 'withdrawal', 'referral_commission', 'course_payment'].map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
-              filter === f 
-                ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 border-2 border-transparent' 
-                : 'bg-white dark:bg-[#151a30] text-blue-900/60 dark:text-slate-400/60 border-2 border-blue-50 dark:border-white/5 hover:border-blue-200 dark:hover:border-white/20'
-            }`}
-          >
-            {f === 'all' ? 'All Operations' : f.split('_').join(' ')}
-          </button>
-        ))}
+      {/* Mini Trend Chart */}
+      <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-blue-50 dark:border-white/10 shadow-sm relative overflow-hidden group">
+         <div className="flex items-center justify-between mb-8">
+            <div>
+               <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Profitability Nodes</h4>
+               <p className="text-xl font-black text-slate-900 dark:text-white uppercase mt-1">Growth Matrix</p>
+            </div>
+            <div className="flex gap-2">
+               <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 uppercase"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Income</span>
+               <span className="flex items-center gap-1.5 text-[10px] font-black text-rose-500 uppercase"><span className="w-2 h-2 rounded-full bg-rose-500" /> Expense</span>
+            </div>
+         </div>
+         <div className="h-40 w-full relative">
+            <svg viewBox="0 0 1000 100" className="w-full h-full preserve-3d" preserveAspectRatio="none">
+               {/* Simplified trend lines */}
+               <path d="M0,80 L100,50 L200,70 L300,30 L400,60 L500,40 L600,20 L700,50 L800,10 L900,40 L1000,20" fill="none" stroke="currentColor" strokeWidth="3" className="text-emerald-500/80" />
+               <path d="M0,90 L100,70 L200,80 L300,60 L400,75 L500,65 L600,55 L700,70 L800,50 L900,65 L1000,45" fill="none" stroke="currentColor" strokeWidth="2" className="text-rose-500/50" strokeDasharray="5,5" />
+            </svg>
+            <div className="absolute inset-0 flex items-end justify-between px-2 pt-10 pointer-events-none opacity-20">
+               {[...Array(11)].map((_, i) => <div key={i} className="w-[1px] h-full bg-slate-200 dark:bg-white/10" />)}
+            </div>
+         </div>
+         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-6 text-center italic">Calculated trend based on last 30 operational nodes</p>
       </div>
 
-      {/* Custom Excel Table Format */}
-      <div className="bg-white dark:bg-[#151a30] rounded-[2.5rem] border border-blue-100 dark:border-white/5 overflow-hidden shadow-2xl shadow-blue-900/10 transition-all">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-blue-900 dark:bg-[#0e1225]">
-                <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Timestamp Tracking</th>
-                <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Entity Reference</th>
-                <th className="text-left p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Operation Specification</th>
-                <th className="text-right p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Fiscal Value</th>
-                <th className="text-center p-6 text-[11px] font-black uppercase tracking-[0.2em] text-white border-b border-white/10">Governance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-blue-50 dark:divide-white/5">
-              {filtered.map(tr => {
-                const dual = formatDualPrice(tr.amount);
-                return (
-                  <tr key={tr.id} className="transition-all group hover:bg-blue-50/50 dark:hover:bg-white/[0.02]">
-                    <td className="p-6 align-middle">
-                      <div className="bg-blue-50/50 dark:bg-black/20 rounded-2xl p-3 border border-blue-100/50 dark:border-white/5 inline-block">
-                        <p className="text-[13px] font-black text-blue-900 dark:text-indigo-200 tracking-tight leading-none">{tr.createdAt ? new Date(tr.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</p>
-                        <p className="text-[10px] font-black text-blue-400 dark:text-indigo-400/40 uppercase tracking-widest mt-1.5">{tr.createdAt ? new Date(tr.createdAt.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}</p>
-                      </div>
-                    </td>
-                    <td className="p-6 align-middle">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-[2px] shadow-lg shadow-indigo-600/20 group-hover:rotate-12 transition-transform">
-                          <div className="w-full h-full rounded-[14px] bg-white dark:bg-[#151a30] flex items-center justify-center text-blue-600 dark:text-white text-xs font-black uppercase">
-                            {(tr.userName?.[0] || 'U')}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-blue-900 dark:text-white tracking-tight leading-none">{tr.userName || 'Generic Client'}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            {tr.userPhone && <a href={`tel:${tr.userPhone}`} className="text-[10px] font-black text-blue-600/50 dark:text-indigo-400/50 hover:text-emerald-500 transition-colors uppercase tracking-tight flex items-center gap-1"><HiPhone className="w-3 h-3"/>{tr.userPhone}</a>}
-                            <span className="w-1 h-1 rounded-full bg-blue-100 dark:bg-white/10" />
-                            {tr.userEmail && <a href={`mailto:${tr.userEmail}`} className="text-[10px] font-black text-blue-600/50 dark:text-indigo-400/50 hover:text-blue-500 transition-colors uppercase tracking-tight flex items-center gap-1"><HiMail className="w-3 h-3"/>{tr.userEmail}</a>}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-6 align-middle">
-                      <div className="flex flex-col gap-2">
-                        <span className={`inline-flex items-center gap-2 w-max px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
-                          tr.type === 'deposit' || tr.type === 'course_payment' ? 'bg-emerald-500/5 text-emerald-600 border-emerald-500/10' : 'bg-rose-500/5 text-rose-600 border-rose-500/10'
-                        }`}>
-                          {tr.type === 'deposit' || tr.type === 'course_payment' ? <HiArrowDown className="w-3 h-3" /> : <HiArrowUp className="w-3 h-3" />}
-                          {tr.type?.split('_').join(' ')}
-                        </span>
-                        <p className="text-[11px] font-black text-blue-900/60 dark:text-slate-400/60 uppercase tracking-wide truncate max-w-[200px]" title={tr.description}>{tr.description || 'System Generated Entry'}</p>
-                        <div className="flex items-center gap-1.5">
-                           <span className="text-[9px] font-black uppercase text-blue-600/40 dark:text-indigo-400/40 bg-blue-50 dark:bg-black/20 border border-blue-100 dark:border-white/5 rounded-md px-2 py-0.5 tracking-[0.15em]">{tr.method || 'NETWORK'}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-6 text-right align-middle">
-                       <div className="inline-block text-right">
-                          <p className="text-xl font-black text-blue-900 dark:text-white tracking-tighter leading-none">{dual.etb}</p>
-                          <p className="text-[10px] font-black text-blue-600/60 dark:text-indigo-400/60 uppercase tracking-widest mt-2 bg-blue-50 dark:bg-white/5 border border-blue-100 dark:border-white/5 rounded-xl px-3 py-1 ml-auto w-max">{dual.usd}</p>
-                       </div>
-                    </td>
-                    <td className="p-6 text-center align-middle">
-                      <div className="flex flex-col items-center gap-3">
-                         {statusBadge(tr.status)}
-                         
-                         {tr.status === 'pending' && tr.type === 'withdrawal' && (
-                           <div className="flex gap-2 w-full max-w-[140px]">
-                             <button onClick={() => updateStatus(tr.id, 'completed')} className="flex-1 py-2 rounded-xl bg-emerald-500 text-white text-[9px] font-black uppercase shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all">Accept</button>
-                             <button onClick={() => updateStatus(tr.id, 'failed')} className="flex-1 py-2 rounded-xl bg-rose-500 text-white text-[9px] font-black uppercase shadow-lg shadow-rose-500/20 hover:scale-105 transition-all">Reject</button>
-                           </div>
-                         )}
+      {/* Filters */}
+      <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+         {['all', 'income', 'expense', 'liability'].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                filter === f 
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-lg' 
+                  : 'bg-white dark:bg-white/5 text-gray-400 border-gray-100 dark:border-white/10 hover:border-blue-300'
+              }`}
+            >
+              {t(f) || f}
+            </button>
+         ))}
+      </div>
 
-                         <button onClick={() => openMessageModal(tr)} className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/10 w-full max-w-[140px] justify-center group">
-                           <HiPaperAirplane className="w-3 h-3 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> NOTIFY
-                         </button>
-                      </div>
-                    </td>
+      {/* Table */}
+      {/* Desktop Table: Advanced Scrollable Layout */}
+      <div className="bg-white dark:bg-black rounded-[3.5rem] border-4 border-blue-600 dark:border-blue-900 shadow-2xl shadow-blue-900/10 overflow-hidden transition-all relative">
+         <div className="overflow-auto max-h-[70vh] custom-scrollbar border-b-2 border-blue-50 dark:border-blue-900/30">
+            <table className="w-full border-collapse min-w-[1400px]">
+               <thead className="sticky top-0 z-20 shadow-xl">
+                  <tr className="bg-blue-600 dark:bg-blue-700 border-b-4 border-blue-700 dark:border-blue-900">
+                    <th className="p-8 text-left text-[12px] font-black uppercase tracking-[0.3em] text-black">Time-Stamp</th>
+                    <th className="p-8 text-left text-[12px] font-black uppercase tracking-[0.3em] text-black">Entity / Source</th>
+                    <th className="p-8 text-left text-[12px] font-black uppercase tracking-[0.3em] text-black">Categorization</th>
+                    <th className="p-8 text-right text-[12px] font-black uppercase tracking-[0.3em] text-black">Financial Value</th>
+                    <th className="p-8 text-right text-[12px] font-black uppercase tracking-[0.3em] text-black">Actions</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-20 text-sm font-bold text-slate-400">Empty List — No transactions matched format.</div>
-        )}
+               </thead>
+               <tbody className="divide-y-2 divide-blue-50 dark:divide-blue-900/30">
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-20 text-center">
+                        <HiChartBar className="w-12 h-12 text-gray-200 dark:text-white/10 mx-auto mb-4" />
+                        <p className="text-sm font-black text-gray-400 uppercase tracking-widest">{t('noResults')}</p>
+                      </td>
+                    </tr>
+                  ) : filtered.map(tr => {
+                    const dual = formatDualPrice(tr.amount);
+                    return (
+                      <tr 
+                        key={tr.id} 
+                        className="group hover:bg-blue-50/40 dark:hover:bg-blue-900/20 transition-all relative"
+                      >
+                        <td className="p-8">
+                           <p className="text-sm font-black text-slate-800 dark:text-emerald-400 tabular-nums uppercase tracking-tighter leading-none mb-2">{tr.createdAt ? formatDateTime(tr.createdAt) : 'PENDING'}</p>
+                           <p className="text-[10px] font-black text-blue-600/40 uppercase tracking-[0.2em]">{tr.id.slice(0, 8)}</p>
+                        </td>
+                        <td className="p-8">
+                           <div className="flex items-center gap-6">
+                             <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[1.8rem] flex items-center justify-center text-white font-black shadow-xl group-hover:rotate-6 transition-all duration-500">
+                                {tr.userName?.[0] || 'S'}
+                             </div>
+                             <div>
+                                <p className="text-sm font-black text-slate-900 dark:text-emerald-400 uppercase tracking-tight group-hover:text-blue-600 transition-colors leading-none mb-2">{tr.userName || 'Anonymous Entity'}</p>
+                                <p className="text-[10px] font-black text-slate-400 dark:text-emerald-500/30 uppercase tracking-widest leading-none">{tr.method || 'Internal Gateway'}</p>
+                             </div>
+                           </div>
+                        </td>
+                        <td className="p-8">
+                           <span className={`inline-flex px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl ${
+                              tr.category === 'income' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 
+                              tr.category === 'expense' ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                           }`}>
+                              {tr.type?.replace('_', ' ')}
+                           </span>
+                        </td>
+                        <td className="p-8 text-right">
+                           <p className="text-2xl font-black text-slate-900 dark:text-white tabular-nums leading-none mb-1">{dual.etb}</p>
+                           <p className="text-[10px] font-black text-blue-600/40 uppercase tracking-widest">{dual.usd}</p>
+                        </td>
+                        <td className="p-8 text-right">
+                           <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                              <button 
+                                onClick={() => { setForm(tr); setEditId(tr.id); setShowForm(true); }}
+                                className="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-600 hover:text-white transition-colors"
+                                title="Edit Transaction"
+                              >
+                                 <HiPencil className="w-5 h-5" />
+                              </button>
+                              <button 
+                                onClick={() => handleDelete(tr.id)}
+                                className="p-3 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-600 hover:text-white transition-colors"
+                                title="Permanent Delete"
+                              >
+                                 <HiTrash className="w-5 h-5" />
+                              </button>
+                           </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+               </tbody>
+            </table>
+         </div>
       </div>
 
-      {/* Add Transaction Modal format */}
-      <Modal isOpen={showAddForm} onClose={() => setShowAddForm(false)} title="Record Manual Transaction" maxWidth="max-w-2xl">
-        <form onSubmit={handleAdd} className="space-y-5 bg-slate-50 p-6 rounded-2xl border border-slate-100">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Client Full Name *</label>
-               <input name="userName" value={form.userName} onChange={e => setForm({...form, userName: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3 rounded-xl focus:border-indigo-500 outline-none" placeholder="e.g. John Doe" required />
+      {/* Add/Edit Modal */}
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditId(null); }} title={editId ? "Edit Financial Entry" : "New Financial Entry"}>
+         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+               <InputGroup label="Entity Name" placeholder="e.g. John Doe, SVTech Supplies" value={form.userName} onChange={v => setForm({...form, userName: v})} />
+               <InputGroup label="Fiscal Value" type="number" value={form.amount} onChange={v => setForm({...form, amount: v})} />
             </div>
-            <div>
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">User Firebase ID</label>
-               <input name="userId" value={form.userId} onChange={e => setForm({...form, userId: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3 rounded-xl focus:border-indigo-500 outline-none" placeholder="UID (Highly Recommended for messaging)" />
+            
+            <div className="grid grid-cols-2 gap-4">
+               <SelectGroup label="Operation Logic" value={form.type} onChange={v => setForm({...form, type: v})} options={[
+                  {v: 'income', l: 'Standard Income'},
+                  {v: 'expense', l: 'General Expense'},
+                  {v: 'liability', l: 'Account Liability'},
+                  {v: 'withdrawal', l: 'User Payout'},
+                  {v: 'course_payment', l: 'Course Revenue'},
+                  {v: 'app_sale', l: 'Product Sale'},
+               ]} />
+               <SelectGroup label="Gateway" value={form.method} onChange={v => setForm({...form, method: v})} options={[
+                  {v: 'bank', l: 'Local Bank'},
+                  {v: 'telebirr', l: 'Telebirr'},
+                  {v: 'stripe', l: 'Stripe Global'},
+                  {v: 'cash', l: 'Physical Cash'},
+               ]} />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Client Mobile Phone</label>
-               <input name="userPhone" value={form.userPhone} onChange={e => setForm({...form, userPhone: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3 rounded-xl focus:border-indigo-500 outline-none" placeholder="+251..." />
-            </div>
-            <div>
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Client Email Address</label>
-               <input type="email" name="userEmail" value={form.userEmail} onChange={e => setForm({...form, userEmail: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3 rounded-xl focus:border-indigo-500 outline-none" placeholder="client@example.com" />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-200">
-            <div>
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Transaction Type *</label>
-               <select name="type" value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3 rounded-xl focus:border-indigo-500 outline-none">
-                 <option value="deposit">Deposit Income</option>
-                 <option value="withdrawal">Withdrawal / Payout</option>
-                 <option value="course_payment">Course Payment Enrollment</option>
-                 <option value="referral_commission">Referral Commission</option>
-                 <option value="app_sale">App / Web Product Sale</option>
-                 <option value="digital_product">Digital Resource Item Sale</option>
-               </select>
-            </div>
-            <div>
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Payment Method / Gateway *</label>
-               <select name="method" value={form.method} onChange={e => setForm({...form, method: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3 rounded-xl focus:border-indigo-500 outline-none">
-                 <option value="bank">Bank Transfer Local</option>
-                 <option value="telebirr">Telebirr Mobile Money</option>
-                 <option value="cbe">CBE Birr Mobile</option>
-                 <option value="cash">Direct Cash Hand-off</option>
-                 <option value="stripe">Stripe / Credit Card Global</option>
-                 <option value="paypal">PayPal Global</option>
-               </select>
-            </div>
-          </div>
+            <textarea 
+               placeholder="Memo / Description..."
+               className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-5 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold text-sm"
+               value={form.description}
+               onChange={e => setForm({...form, description: e.target.value})}
+            />
 
-          <div className="grid grid-cols-3 gap-4">
-             <div className="col-span-1">
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Gross Amount (ETB) *</label>
-               <input name="amount" type="number" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="w-full bg-white border-2 border-emerald-500 text-emerald-700 text-lg font-black p-3 rounded-xl outline-none" placeholder="0.00" required />
-             </div>
-             <div className="col-span-2">
-               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Memo / Description Reference</label>
-               <input name="description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full bg-white border border-slate-200 text-sm font-bold p-3.5 rounded-xl focus:border-indigo-500 outline-none" placeholder="Invoice # or specific service details..." />
-             </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-200">
-             <button type="submit" disabled={loading} className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-black uppercase tracking-widest rounded-xl shadow-lg shadow-indigo-500/30 hover:-translate-y-0.5 transition-all">
-               {loading ? 'Processing Ledger...' : 'Insert Transaction to Ledger Table'}
-             </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Message User Modal */}
-      <Modal isOpen={showMessageForm} onClose={() => setShowMessageForm(false)} title="Broadcast Message to Selected User" maxWidth="max-w-2xl">
-         <form onSubmit={handleSendMessage} className="space-y-5 bg-[#0e1225] p-6 rounded-2xl border border-white/10">
-            <div>
-               <label className="block text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1.5">Recipient Full Name</label>
-               <input value={messageForm.targetUserName} disabled className="w-full bg-slate-900/50 text-white/50 border border-white/10 p-4 rounded-xl font-bold cursor-not-allowed" />
-            </div>
-            <div>
-               <label className="block text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1.5">Message Title Header</label>
-               <input value={messageForm.title} onChange={e => setMessageForm({...messageForm, title: e.target.value})} className="w-full bg-slate-900 text-white placeholder:text-slate-500 border border-white/20 p-4 rounded-xl focus:border-indigo-500 font-black outline-none transition-colors" placeholder="Notice regarding invoice payment" required />
-            </div>
-            <div>
-               <label className="block text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1.5">Content Body Formatting</label>
-               <textarea value={messageForm.message} onChange={e => setMessageForm({...messageForm, message: e.target.value})} className="w-full bg-slate-900 text-white placeholder:text-slate-500 border border-white/20 p-4 rounded-xl focus:border-indigo-500 font-medium outline-none min-h-[160px] resize-y" placeholder="Type your full formatted message here..." required></textarea>
-            </div>
-            <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 text-white font-black uppercase tracking-widest text-sm rounded-xl hover:bg-blue-500 shadow-xl shadow-blue-600/30 transition-all cursor-pointer">
-              <HiPaperAirplane className="w-5 h-5" /> Push Target Notification Now
+            <button disabled={loading} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all">
+               {loading ? t('loading') : (editId ? 'Update Financial Entry' : 'Commit Financial Entry')}
             </button>
          </form>
       </Modal>
     </div>
   );
 };
+
+const StatsPulse = ({ icon: Icon, label, val, color, isPrice, formatPrice }) => (
+  <div className={`bg-gradient-to-br ${color} p-7 rounded-[2rem] border border-white/10 shadow-xl relative overflow-hidden group`}>
+     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-1000">
+        <Icon className="w-24 h-24 text-white" />
+     </div>
+     <div className="relative z-10 flex flex-col justify-between h-full">
+        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-6 backdrop-blur-xl border border-white/20">
+           <Icon className="w-5 h-5 text-white" />
+        </div>
+        <div>
+           <h4 className="text-2xl font-black text-white tracking-tighter tabular-nums leading-none mb-1">
+              {isPrice ? formatPrice(val) : val}
+           </h4>
+           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/60">{label}</p>
+        </div>
+     </div>
+  </div>
+);
+
+const InputGroup = ({ label, value, onChange, type="text", placeholder }) => (
+  <div className="space-y-2">
+     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">{label}</label>
+     <input 
+        type={type}
+        placeholder={placeholder}
+        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-4 rounded-xl font-bold text-sm outline-none focus:border-blue-500 focus:bg-white transition-all"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+     />
+  </div>
+);
+
+const SelectGroup = ({ label, value, onChange, options }) => (
+  <div className="space-y-2">
+     <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest px-1">{label}</label>
+     <select 
+       className="w-full bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 p-4 rounded-xl font-bold text-sm outline-none focus:border-blue-500 transition-all cursor-pointer"
+       value={value}
+       onChange={e => onChange(e.target.value)}
+     >
+        {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+     </select>
+  </div>
+);
 
 export default TransactionPanel;

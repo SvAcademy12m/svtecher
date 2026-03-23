@@ -1,23 +1,18 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { HiPhone, HiMail, HiLocationMarker, HiArrowRight, HiCheckCircle } from 'react-icons/hi';
+import { HiPhone, HiMail, HiLocationMarker, HiArrowRight, HiCheckCircle, HiHashtag } from 'react-icons/hi';
 import { FaTelegram, FaWhatsapp } from 'react-icons/fa';
 import { CONTACT_INFO } from '../../core/utils/constants';
 import { fadeUp } from '../../core/utils/animations';
 import { toast } from 'react-toastify';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../core/firebase/firebase';
-
-const CONTACT_CARDS = [
-  { icon: HiPhone, label: 'Call Us', gradient: 'from-blue-600 to-indigo-700', shadow: 'shadow-blue-500/20' },
-  { icon: HiMail, label: 'Email', gradient: 'from-cyan-500 to-blue-600', shadow: 'shadow-cyan-500/20' },
-  { icon: HiLocationMarker, label: 'Location', gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
-];
-
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const inputClass = "w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-slate-600 focus:border-blue-500/50 focus:bg-white/8 outline-none transition-all font-medium";
 
 const ContactPage = () => {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -25,7 +20,7 @@ const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.message) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('noResults')); // Fallback for "Please fill required fields"
       return;
     }
     setLoading(true);
@@ -35,11 +30,11 @@ const ContactPage = () => {
         createdAt: serverTimestamp(),
         read: false,
       });
-      toast.success('Message sent! We\'ll respond within 24 hours.');
+      toast.success(t('messageSent'));
       setSent(true);
       setForm({ name: '', email: '', subject: '', message: '' });
     } catch {
-      toast.error('Failed to send message. Please try again.');
+      toast.error('Failed to send message');
     } finally {
       setLoading(false);
     }
@@ -56,22 +51,22 @@ const ContactPage = () => {
           <motion.div {...fadeUp} className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
               <HiMail className="w-4 h-4 text-blue-400" />
-              <span className="text-xs font-black text-blue-300 uppercase tracking-[0.3em]">Contact</span>
+              <span className="text-xs font-black text-blue-300 uppercase tracking-[0.3em]">{t('contact')}</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase leading-tight mb-6 italic">
-              LET'S <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">CONNECT</span>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase leading-tight mb-6">
+              {t('contactTitle').split(' ')[0]} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">{t('contactTitle').split(' ').slice(1).join(' ')}</span>
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-black uppercase italic leading-relaxed">
-              HAVE A PROJECT IN MIND? WANT A FREE CONSULTATION? WE'RE READY TO HELP YOU BUILD SOMETHING EXCEPTIONAL.
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-black uppercase leading-relaxed">
+              {t('contactDesc')}
             </p>
           </motion.div>
 
           {/* Contact Info Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-20">
             {[
-              { icon: HiPhone, label: 'Call Us', value: CONTACT_INFO.phone, link: `tel:${CONTACT_INFO.phone}`, gradient: 'from-blue-600 to-indigo-700', shadow: 'shadow-blue-500/20' },
-              { icon: HiMail, label: 'Email', value: CONTACT_INFO.email, link: `mailto:${CONTACT_INFO.email}`, gradient: 'from-cyan-500 to-blue-600', shadow: 'shadow-cyan-500/20' },
-              { icon: HiLocationMarker, label: 'Location', value: 'Addis Ababa, Ethiopia', link: null, gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
+              { icon: HiPhone, label: t('callUs'), value: CONTACT_INFO.phone, link: `tel:${CONTACT_INFO.phone}`, gradient: 'from-blue-600 to-indigo-700', shadow: 'shadow-blue-500/20' },
+              { icon: HiMail, label: t('email'), value: CONTACT_INFO.email, link: `mailto:${CONTACT_INFO.email}`, gradient: 'from-cyan-500 to-blue-600', shadow: 'shadow-cyan-500/20' },
+              { icon: HiLocationMarker, label: t('location'), value: 'Addis Ababa, Ethiopia', link: null, gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
             ].map((item, i) => (
               <motion.a
                 key={i}
@@ -96,51 +91,62 @@ const ContactPage = () => {
             ))}
           </div>
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start mb-20">
             {/* Info Side */}
             <motion.div {...fadeUp} className="space-y-10">
               <div>
-                <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4 italic">
-                  RESPONSE TIME: <span className="text-cyan-400">&lt; 24HRS</span>
+                <h2 className="text-3xl font-black text-white tracking-tighter uppercase mb-4">
+                  {t('responseTime')}
                 </h2>
-                <p className="text-slate-400 font-black uppercase italic leading-relaxed">
-                  WE TAKE EVERY INQUIRY SERIOUSLY. WHETHER IT'S A LARGE ENTERPRISE PROJECT OR A SMALL WEB FIX, OUR TEAM RESPONDS PROMPTLY.
+                <p className="text-slate-400 font-black uppercase leading-relaxed">
+                  {t('responseDesc')}
                 </p>
               </div>
 
-              <div className="space-y-4">
-                {[
-                  'FREE INITIAL CONSULTATION',
-                  'DETAILED PROJECT PROPOSAL & TIMELINE',
-                  'TRANSPARENT PRICING — NO HIDDEN FEES',
-                  'DEDICATED PROJECT MANAGER',
-                  'POST-LAUNCH SUPPORT INCLUDED',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 text-white font-black uppercase text-[10px] tracking-widest">
-                    <HiCheckCircle className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                    {item}
+              {/* Barcode System (Digital Credential) */}
+              <div className="bg-white/5 border border-white/10 rounded-[2rem] p-8 relative group overflow-hidden">
+                <div className="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex flex-col sm:flex-row items-center gap-8">
+                  <div className="shrink-0 bg-white p-4 rounded-2xl shadow-2xl rotate-1 group-hover:rotate-0 transition-transform">
+                    {/* Simulated SVG Barcode Code-128 */}
+                    <svg width="140" height="80" viewBox="0 0 140 80">
+                       <rect width="140" height="80" fill="white" />
+                       {[2,5,8,12,15,20,22,25,30,35,40,42,45,50,55,58,62,65,70,75,80,82,85,90,95,98,102,105,110,115,120,122,125,130,135].map((x, i) => (
+                          <rect key={i} x={x} y="10" width={i % 3 === 0 ? "3" : "1"} height="50" fill="black" />
+                       ))}
+                       <text x="70" y="72" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">SVTECH-DIGITAL-2026</text>
+                    </svg>
                   </div>
-                ))}
+                  <div>
+                    <h4 className="text-white font-black uppercase tracking-widest text-sm mb-2">{t('officialBarcode')}</h4>
+                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] leading-relaxed">
+                      {t('scanForDetails')}
+                    </p>
+                    <div className="mt-4 flex items-center gap-2 text-cyan-400">
+                       <HiHashtag className="w-5 h-5" />
+                       <span className="text-[10px] font-black uppercase tracking-widest">Digital Auth Verified</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Social Links */}
               <div className="pt-6 border-t border-white/5">
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] mb-4">Instant Support</p>
-                <div className="flex gap-4">
+                <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] mb-4">{t('instantSupport')}</p>
+                <div className="flex flex-wrap gap-4">
                   <a
                     href={CONTACT_INFO.telegram}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 font-black text-xs uppercase tracking-widest hover:bg-blue-500/20 transition-all"
                   >
-                    <FaTelegram className="w-5 h-5" /> TELEGRAM CHANNEL
+                    <FaTelegram className="w-5 h-5" /> TELEGRAM
                   </a>
                   <a
                     href={CONTACT_INFO.whatsapp}
                     target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black text-xs uppercase tracking-widest hover:bg-emerald-500/20 transition-all"
                   >
-                    <FaWhatsapp className="w-5 h-5" /> WHATSAPP DIRECT
+                    <FaWhatsapp className="w-5 h-5" /> WHATSAPP
                   </a>
                 </div>
               </div>
@@ -159,21 +165,21 @@ const ContactPage = () => {
                   <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
                     <HiCheckCircle className="w-10 h-10 text-emerald-400" />
                   </div>
-                  <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Message Sent!</h3>
+                  <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">{t('messageSent')}</h3>
                   <p className="text-slate-400 font-medium mb-6">We'll get back to you within 24 hours.</p>
-                  <button onClick={() => setSent(false)} className="px-8 py-3 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-blue-500 transition-colors">
-                    Send Another
+                  <button onClick={() => setSent(false)} className="px-8 py-4 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-blue-500 transition-colors shadow-xl shadow-blue-500/20">
+                    {t('sendAnother')}
                   </button>
                 </div>
               ) : (
                 <>
                   <h3 className="text-xl font-black text-white uppercase tracking-tight mb-8 relative">
-                    Send a Message
+                    {t('sendMessage')}
                   </h3>
-                  <form onSubmit={handleSubmit} className="space-y-5 relative">
+                  <form onSubmit={handleSubmit} className="space-y-6 relative">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
-                        <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">Name *</label>
+                        <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">{t('fullName')} *</label>
                         <input
                           value={form.name}
                           onChange={e => setForm({ ...form, name: e.target.value })}
@@ -183,7 +189,7 @@ const ContactPage = () => {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">Email *</label>
+                        <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">{t('email')} *</label>
                         <input
                           type="email"
                           value={form.email}
@@ -196,7 +202,7 @@ const ContactPage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">Subject</label>
+                      <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">{t('subject')}</label>
                       <input
                         value={form.subject}
                         onChange={e => setForm({ ...form, subject: e.target.value })}
@@ -206,7 +212,7 @@ const ContactPage = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">Message *</label>
+                      <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase tracking-[0.2em] ml-1">{t('message')} *</label>
                       <textarea
                         value={form.message}
                         onChange={e => setForm({ ...form, message: e.target.value })}
@@ -227,7 +233,7 @@ const ContactPage = () => {
                         {loading ? (
                           <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                          <>Send Message <HiArrowRight size={18} /></>
+                          <>{t('sendButton')} <HiArrowRight size={18} /></>
                         )}
                       </div>
                     </button>

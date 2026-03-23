@@ -56,13 +56,13 @@ const CoursesPage = () => {
           <motion.div {...fadeUp} className="text-center mb-14">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
               <HiAcademicCap className="w-4 h-4 text-blue-400" />
-              <span className="text-xs font-black text-blue-300 uppercase tracking-[0.3em]">Curriculum</span>
+              <span className="text-xs font-black text-blue-300 tracking-[0.3em]">Curriculum</span>
             </div>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter uppercase leading-tight mb-6">
-              Elite <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Courses</span>
+            <h1 className="text-6xl sm:text-7xl md:text-8xl font-black text-white tracking-tighter leading-tight mb-6 text-center">
+              SvTech <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Digital Technology</span>
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-              Master in-demand skills with our professional, industry-backed training programs. From beginner to expert.
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto font-bold leading-relaxed">
+              Master Peachtree, QuickBooks, and IFRS compliance with our specialized business software training programs.
             </p>
           </motion.div>
 
@@ -87,7 +87,7 @@ const CoursesPage = () => {
               <button
                 key={f.id}
                 onClick={() => setFilter(f.id)}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                className={`px-5 py-2.5 rounded-2xl text-xs font-black tracking-widest transition-all ${
                   filter === f.id
                     ? `bg-gradient-to-r ${FILTER_GRADIENTS[f.id] || 'from-blue-600 to-cyan-500'} text-white shadow-lg scale-105`
                     : 'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
@@ -106,7 +106,7 @@ const CoursesPage = () => {
           {filtered.length === 0 ? (
             <motion.div {...fadeUp} className="text-center py-24">
               <HiAcademicCap className="w-16 h-16 text-slate-700 mx-auto mb-6" />
-              <p className="text-slate-500 font-black text-lg uppercase tracking-widest">
+              <p className="text-slate-500 font-black text-lg tracking-widest">
                 {search ? 'No courses match your search.' : 'No courses available yet.'}
               </p>
               <p className="text-slate-600 text-sm mt-2">Check back soon — new courses are added regularly.</p>

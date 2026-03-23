@@ -1,35 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiHome, HiBookOpen, HiUserGroup, HiCurrencyDollar, HiLogout, HiMenu, HiX, HiVideoCamera, HiChatAlt2 } from 'react-icons/hi';
+import { 
+  HiHome, HiBookOpen, HiUserGroup, HiCurrencyDollar, HiLogout, HiMenu, HiX, 
+  HiVideoCamera, HiChatAlt2, HiTranslate, HiMoon, HiSun, HiGlobe, HiLink
+} from 'react-icons/hi';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { logoutUser } from '../../core/services/authService';
 import { getInitials } from '../../core/utils/formatters';
+import SocialEarningsCard from '../../components/cards/SocialEarningsCard';
 
 const TrainerDashboard = () => {
   const [activePanel, setActivePanel] = useState('overview');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { userData, user } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang, toggleLanguage } = useLanguage();
+  const { currency, toggleCurrency } = useCurrency();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const navSections = [
     {
+      title: 'Academy Hub',
       items: [
-        { key: 'overview', label: 'Overview', icon: HiHome },
+        { key: 'overview', label: 'Dashboard', icon: HiHome },
         { key: 'my-courses', label: 'My Courses', icon: HiBookOpen },
         { key: 'students', label: 'My Students', icon: HiUserGroup },
+        { key: 'referrals', label: 'Referrals', icon: HiLink },
       ]
     },
     {
-      title: 'TOOLS',
+      title: 'Trainer Tools',
       items: [
         { key: 'live-classes', label: 'Live Classes', icon: HiVideoCamera },
-        { key: 'discussions', label: 'Discussions', icon: HiChatAlt2 },
+        { key: 'discussions', label: 'Messages', icon: HiChatAlt2 },
         { key: 'earnings', label: 'Earnings', icon: HiCurrencyDollar },
       ]
     }
   ];
+
+  const getPanelLabel = () => {
+    return navSections.flatMap(s => s.items).find(i => i.key === activePanel)?.label || 'Dashboard';
+  };
 
   const handleLogout = async () => {
     await logoutUser();
@@ -37,33 +51,36 @@ const TrainerDashboard = () => {
   };
 
   const SidebarContent = ({ onNavClick }) => (
-    <div className="flex flex-col h-full bg-[#0e1225]" style={{ background: 'linear-gradient(180deg, #0e1225 0%, #17121c 50%, #0e1225 100%)' }}>
-      <div className="p-4 pb-3 flex items-center gap-3 border-b border-white/5">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
-          <span className="text-white font-black text-xs">SV</span>
-        </div>
-        <div>
-          <h1 className="text-sm font-black text-white tracking-tight">Instructor Panel</h1>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="p-8 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-xl rotate-3 transform transition-transform group-hover:rotate-0">
+            <span className="text-blue-700 font-black text-xl">SV</span>
+          </div>
+          <div>
+            <h1 className="text-lg font-black tracking-tight leading-none text-white">Trainer</h1>
+            <p className="text-[10px] font-black text-blue-200 tracking-widest mt-1 uppercase">Instructor Portal</p>
+          </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-3 overflow-y-auto w-[240px]">
+      <nav className="flex-1 px-4 py-8 overflow-y-auto dark-scroll">
         {navSections.map((section, si) => (
-          <div key={si} className={si > 0 ? 'mt-5' : ''}>
-            {section.title && (
-              <p className="px-3 mb-1.5 text-[10px] font-black text-purple-300/60 uppercase tracking-[0.2em]">{section.title}</p>
-            )}
-            <div className="space-y-0.5">
+          <div key={si} className={si > 0 ? 'mt-12' : ''}>
+            <h3 className="px-5 text-[10px] font-black text-blue-100 uppercase tracking-[0.2em] mb-4 opacity-50">{section.title}</h3>
+            <div className="space-y-2">
               {section.items.map(item => (
                 <button
                   key={item.key}
                   onClick={() => { setActivePanel(item.key); onNavClick?.(); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-200 ${
-                    activePanel === item.key ? 'bg-purple-500/20 text-white border border-purple-400/20 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-sm tracking-tight ${
+                    activePanel === item.key
+                      ? 'bg-white/20 text-white shadow-xl border border-white/20 backdrop-blur-md'
+                      : 'text-blue-100 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${activePanel === item.key ? 'text-purple-400' : ''}`} />
-                  <span className="flex-1 text-left">{item.label}</span>
+                  <item.icon className={`w-5 h-5 transition-transform ${activePanel === item.key ? 'scale-110' : ''}`} />
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -71,101 +88,167 @@ const TrainerDashboard = () => {
         ))}
       </nav>
 
-      <div className="px-4 py-3 border-t border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-400 flex items-center justify-center text-white text-[9px] font-bold">
+      <div className="p-6 mt-auto border-t border-white/10 shrink-0">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-rose-500 text-white rounded-2xl font-black text-xs tracking-widest shadow-xl shadow-rose-900/40 hover:bg-rose-600 transition-all active:scale-95 group mb-6"
+        >
+          <HiLogout className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          Sign Out
+        </button>
+
+        <div className="p-2 bg-white/10 rounded-2xl border border-white/20 flex items-center gap-4 pr-6">
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-blue-700 font-black shadow-lg shadow-blue-900/20">
             {getInitials(userData?.name)}
           </div>
-          <div className="overflow-hidden">
-            <p className="text-[11px] font-bold text-white truncate">{userData?.name}</p>
-            <p className="text-[9px] text-slate-500 truncate">Trainer / Instructor</p>
+          <div className="hidden sm:block text-right">
+            <p className="text-xs font-black text-white leading-none truncate max-w-[100px]">{userData?.name || 'Instructor'}</p>
+            <p className="text-[9px] font-black text-blue-200 tracking-wider mt-1 opacity-60 uppercase">Certified Trainer</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors" title="Sign Out">
-          <HiLogout className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );
 
   return (
-    <div className="flex min-h-[calc(100vh-80px)] mt-20 bg-slate-50">
-      <aside className="hidden lg:flex w-[240px] flex-col flex-shrink-0 sticky top-20 h-[calc(100vh-80px)] border-r border-slate-200">
+    <div className="flex min-h-screen bg-[#f0f4f8] dark:bg-[#080b18] overflow-x-hidden font-sans pb-20 lg:pb-0">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex flex-col w-72 bg-blue-700 text-white shadow-[10px_0_40px_rgba(0,0,0,0.1)] sticky top-0 h-screen overflow-hidden z-30">
         <SidebarContent />
       </aside>
 
+      {/* Mobile Sidebar */}
       {mobileSidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="lg:hidden fixed inset-0 z-[100] flex animate-in fade-in duration-300">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileSidebarOpen(false)} />
-          <div className="relative w-64 flex flex-col shadow-2xl">
-            <button onClick={() => setMobileSidebarOpen(false)} className="absolute top-3 right-3 p-2 rounded-lg text-slate-400 hover:text-white z-10">
-              <HiX className="w-5 h-5" />
+          <div className="relative w-[300px] bg-blue-700 text-white shadow-2xl transition-all duration-300 animate-in slide-in-from-left">
+            <button onClick={() => setMobileSidebarOpen(false)} className="absolute top-6 -right-12 w-10 h-10 flex items-center justify-center rounded-xl text-white bg-blue-600 shadow-xl z-50">
+              <HiX className="w-6 h-6" />
             </button>
             <SidebarContent onNavClick={() => setMobileSidebarOpen(false)} />
           </div>
         </div>
       )}
 
-      {/* Mobile Sidebar Floating Action Button (FAB) */}
-      <button 
-        onClick={() => setMobileSidebarOpen(true)}
-        className="lg:hidden fixed bottom-24 right-6 z-40 w-14 h-14 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-xl shadow-purple-500/30 active:scale-90 transition-all"
-      >
-        <HiMenu className="w-6 h-6" />
-      </button>
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col relative min-w-0 bg-[#f8fbff] dark:bg-[#080b18]">
+        {/* Top Navbar */}
+        <header className="h-24 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex items-center justify-between px-6 lg:px-10 sticky top-0 z-40 shadow-2xl shadow-blue-900/10 border-b border-white/10">
+          <div className="flex items-center gap-6 flex-1">
+             <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-3 bg-white/10 rounded-2xl text-white hover:bg-white/20 transition-all border border-white/10">
+                <HiMenu className="w-6 h-6" />
+             </button>
+             <div className="hidden md:block">
+                <h2 className="text-2xl font-black text-white tracking-tighter leading-none  uppercase">{getPanelLabel()}</h2>
+             </div>
+          </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-20 h-14 bg-white border-b border-slate-100 px-4 lg:px-6 flex items-center justify-between flex-shrink-0 z-20">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-500">
-              <HiMenu className="w-5 h-5" />
-            </button>
-            <h2 className="text-base font-bold text-slate-800 capitalize">{activePanel.replace('-', ' ')}</h2>
+          <div className="flex items-center gap-4 lg:gap-8">
+             <div className="hidden sm:flex items-center gap-2 p-1 bg-white/10 rounded-2xl border border-white/20 backdrop-blur-md">
+               <button onClick={toggleLanguage} className="p-2.5 rounded-xl hover:bg-white/20 text-white transition-all group relative">
+                 <HiTranslate className="w-5 h-5" />
+                 <span className="absolute -top-1 -right-1 px-1.5 py-0.5 bg-rose-500 rounded-full text-[8px] font-black flex items-center justify-center border border-white shadow-lg">{lang}</span>
+               </button>
+               <button onClick={toggleCurrency} className="p-2.5 rounded-xl hover:bg-white/20 text-white transition-all">
+                 <HiCurrencyDollar className="w-5 h-5" />
+               </button>
+               <button onClick={toggleTheme} className="p-2.5 rounded-xl bg-white/20 text-white shadow-inner transition-all hover:bg-white/30">
+                 {theme === 'dark' ? <HiSun className="w-5 h-5" /> : <HiMoon className="w-5 h-5" />}
+               </button>
+            </div>
+
+            <div className="flex items-center gap-3 p-1.5 bg-white/10 rounded-2xl border border-white/20 hover:bg-white/20 transition-all cursor-pointer group">
+               <div className="hidden lg:block text-right pl-3 pr-1">
+                  <p className="text-xs font-black text-white leading-none truncate max-w-[120px]">{userData?.name || 'Instructor'}</p>
+                  <p className="text-[9px] font-black text-blue-200 tracking-wider mt-1.5 opacity-70  uppercase">Certified Trainer</p>
+               </div>
+               <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-blue-700 font-black shadow-lg transform group-hover:scale-105 transition-transform duration-300">
+                  {getInitials(userData?.name)}
+               </div>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 bg-slate-50">
+        {/* Content */}
+        <main className="flex-1 p-4 lg:p-10 transition-all overflow-y-auto">
           {activePanel === 'overview' && (
-            <div className="space-y-6">
-              <h3 className="text-2xl font-black text-slate-900">Instructor Dashboard</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl p-5 text-white shadow-lg stat-shine">
-                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-4">
-                    <HiBookOpen className="w-5 h-5 text-white" />
-                  </div>
-                  <p className="text-3xl font-black">0</p>
-                  <p className="text-[10px] font-bold text-purple-100 uppercase tracking-wider mt-1">Managed Courses</p>
-                </div>
-                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
-                  <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center mb-4">
-                    <HiUserGroup className="w-5 h-5 text-slate-400" />
-                  </div>
-                  <p className="text-3xl font-black text-slate-900">0</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">Total Students</p>
-                </div>
-              </div>
+            <div className="space-y-10 animate-in fade-in duration-700">
+               <div>
+                  <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter mb-2 uppercase">Instructor Dashboard</h3>
+                  <p className="text-[10px] font-black text-slate-500 dark:text-white/40 tracking-[0.3em] uppercase">Control Center 2026</p>
+               </div>
 
-              <div className="mt-8 text-center py-16 bg-white rounded-2xl border border-slate-100">
-                <HiVideoCamera className="w-12 h-12 text-slate-200 mx-auto mb-3" />
-                <p className="text-sm font-medium text-slate-500 mb-4">You have no active courses yet.</p>
-                <button className="px-5 py-2.5 bg-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-500/30 hover:bg-purple-600 transition-all">
-                  Create Course
-                </button>
-              </div>
+               {(() => {
+                  const referralCount = userData?.referralsCount || 0;
+                  const finalEtb = referralCount > 0 ? (20 + (referralCount - 1) * 10) : 0;
+                  const finalUsd = (finalEtb / 120).toFixed(2);
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                       <StatCard label="My Courses" val="0" icon={HiBookOpen} color="from-blue-600 to-indigo-700" />
+                       <StatCard label="My Students" val="0" icon={HiUserGroup} color="from-indigo-600 to-blue-800" />
+                       <StatCard label="Followers" val={userData?.followersCount || 0} icon={HiGlobe} color="from-emerald-500 to-teal-600" />
+                       <StatCard label="Wallet" val={`${userData?.walletBalance || 0} Br`} icon={HiLink} color="from-purple-600 to-indigo-700" />
+                    </div>
+                  );
+               })()}
+
+               {/* Social Media Daily Earnings */}
+               <SocialEarningsCard userId={user?.uid} />
+
+               <div className="mt-12 text-center py-24 bg-white dark:bg-white/5 rounded-[3rem] border border-slate-100 dark:border-white/10 shadow-inner">
+                  <div className="w-20 h-20 bg-slate-50 dark:bg-white/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8">
+                    <HiVideoCamera className="w-10 h-10 text-slate-300 dark:text-white/20" />
+                  </div>
+                  <p className="text-lg font-black text-slate-500 dark:text-white/40 uppercase tracking-widest mb-6">No active courses yet.</p>
+                  <button className="px-10 py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all">
+                    Create New Course
+                  </button>
+               </div>
             </div>
           )}
           {activePanel !== 'overview' && (
-             <div className="flex items-center justify-center h-full text-center">
-               <div>
-                  <h3 className="text-xl font-bold text-slate-900">{activePanel.replace('-', ' ')}</h3>
-                  <p className="text-sm text-slate-500 mt-2">Section under construction.</p>
-               </div>
+             <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+                <div className="w-24 h-24 bg-slate-100 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mb-8 animate-pulse">
+                   <HiCog className="w-12 h-12 text-slate-300 dark:text-white/20" />
+                </div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-3">{activePanel.replace('-', ' ')}</h3>
+                <p className="text-[10px] font-black text-slate-500 dark:text-white/40 uppercase tracking-widest">System implementation in progress...</p>
              </div>
           )}
         </main>
+
+        {/* Mobile Bottom Nav */}
+        <nav className="lg:hidden fixed bottom-4 left-4 right-4 z-50 bg-white/80 dark:bg-[#0e1225]/80 backdrop-blur-xl border border-slate-100 dark:border-white/10 px-6 py-3 rounded-2xl flex items-center justify-between shadow-2xl">
+           <MobileNavItem active={activePanel === 'overview'} icon={HiHome} onClick={() => setActivePanel('overview')} />
+           <MobileNavItem active={activePanel === 'my-courses'} icon={HiBookOpen} onClick={() => setActivePanel('my-courses')} />
+           <button 
+             onClick={() => setMobileSidebarOpen(true)}
+             className="w-14 h-14 -mt-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center text-white shadow-2xl border-4 border-white dark:border-[#0e1225]"
+           >
+             <HiMenu className="w-7 h-7" />
+           </button>
+           <MobileNavItem active={activePanel === 'students'} icon={HiUserGroup} onClick={() => setActivePanel('students')} />
+           <MobileNavItem active={activePanel === 'earnings'} icon={HiCurrencyDollar} onClick={() => setActivePanel('earnings')} />
+        </nav>
       </div>
     </div>
   );
 };
+
+const StatCard = ({ label, val, subVal, icon: Icon, color }) => (
+  <div className={`bg-gradient-to-br ${color} p-8 rounded-[2.5rem] text-white relative overflow-hidden group border border-white/10 shadow-xl`}>
+     <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
+        <Icon className="w-24 h-24" />
+     </div>
+     <div className="relative z-10">
+        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-8 backdrop-blur-md border border-white/20">
+           <Icon className="w-6 h-6" />
+        </div>
+        <h4 className="text-4xl font-black tracking-tighter leading-none mb-1">{val}</h4>
+        {subVal && <p className="text-xs font-black text-white/60 mb-2 uppercase tracking-tight">{subVal}</p>}
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70">{label}</p>
+     </div>
+  </div>
+);
 
 export default TrainerDashboard;

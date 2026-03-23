@@ -1,70 +1,103 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HiCode, HiDesktopComputer, HiAcademicCap, HiShieldCheck, HiChartBar, HiGlobe, HiArrowRight, HiCheckCircle, HiLightBulb, HiCurrencyDollar } from 'react-icons/hi';
+import { HiCode, HiDesktopComputer, HiAcademicCap, HiShieldCheck, HiChartBar, HiGlobe, HiArrowRight, HiCheckCircle, HiLightBulb, HiCurrencyDollar, HiSupport, HiTicket } from 'react-icons/hi';
 import { FaRobot, FaCalculator } from 'react-icons/fa';
 import { fadeUp } from '../../core/utils/animations';
+import ServiceOrderForm from '../../components/ServiceOrderForm';
 
 const services = [
   {
-    icon: HiCode,
-    title: 'Web Development',
-    desc: 'CUSTOM WEBSITES, WEB APPLICATIONS, E-COMMERCE PLATFORMS, AND CMS SOLUTIONS BUILT WITH REACT, NEXT.JS, AND FIREBASE.',
+    icon: FaCalculator,
+    title: 'Business Accounting Solutions',
+    desc: 'Master professional accounting ecosystem with hands-on training in Peachtree, QuickBooks, and IFRS compliance.',
     gradient: 'from-blue-600 to-indigo-700',
     shadow: 'shadow-blue-500/20',
-    features: ['React / Next.js', 'Firebase & Node.js', 'E-commerce & CMS'],
-    badge: 'Most Popular',
+    features: ['Peachtree (Sage 50) Expertise', 'QuickBooks Desktop & Online', 'IFRS Standards & Reporting'],
+    badge: 'Pro Certification',
+    type: 'training'
   },
   {
     icon: HiDesktopComputer,
-    title: 'Mobile Apps',
-    desc: 'NATIVE AND CROSS-PLATFORM MOBILE APPS FOR IOS AND ANDROID WITH SEAMLESS, INTUITIVE USER EXPERIENCES.',
+    title: 'IT Maintenance & Repair',
+    desc: 'Premium maintenance contracts and elite repair services for enterprise laptop and desktop fleets.',
     gradient: 'from-cyan-500 to-blue-600',
     shadow: 'shadow-cyan-500/20',
-    features: ['React Native', 'iOS & Android', 'Push Notifications'],
-    badge: null,
+    features: ['Corporate Fleet Support', 'Hardware & Software Repair', 'Preventative Maintenance'],
+    badge: 'Enterprise Tier',
+    type: 'maintenance'
   },
   {
-    icon: FaCalculator,
-    title: 'Accounting Software',
-    desc: 'READY-TO-DEPLOY ACCOUNTING AND BUSINESS MANAGEMENT SYSTEMS BUILT FOR ETHIOPIAN BUSINESSES AND ENTERPRISES.',
+    icon: HiCode,
+    title: 'Web & Mobile Ecosystems',
+    desc: 'Bespoke web applications and native mobile experiences built with cutting-edge frameworks for maximum scalability.',
+    gradient: 'from-purple-600 to-indigo-700',
+    shadow: 'shadow-purple-500/20',
+    features: ['React & Next.js Development', 'iOS & Android Native Apps', 'Cloud Infrastructure (AWS/Firebase)'],
+    badge: 'Elite Dev',
+    type: 'development'
+  },
+  {
+    icon: HiChartBar,
+    title: 'Digital Marketing Matrix',
+    desc: 'Data-driven marketing strategies including SEO, social media management, and high-conversion ad campaigns.',
+    gradient: 'from-rose-500 to-pink-600',
+    shadow: 'shadow-rose-500/20',
+    features: ['Growth Hacking & SEO', 'Social Media Management', 'Paid Ad Optimization (PPC)'],
+    badge: 'Growth Focused',
+    type: 'marketing'
+  },
+  {
+    icon: HiGlobe,
+    title: 'Network Infrastructure',
+    desc: 'End-to-end network design, installation, and secure configuration for scalable business environments.',
     gradient: 'from-emerald-500 to-teal-600',
     shadow: 'shadow-emerald-500/20',
-    features: ['Invoicing & Reports', 'Payroll Management', 'Multi-currency (ETB/USD)'],
-    badge: 'Featured',
-  },
-  {
-    icon: HiAcademicCap,
-    title: 'Tech Training',
-    desc: 'HANDS-ON TRAINING IN PROGRAMMING, DESIGN, NETWORKING, AND CYBERSECURITY WITH INDUSTRY-CERTIFIED INSTRUCTORS.',
-    gradient: 'from-purple-600 to-pink-600',
-    shadow: 'shadow-purple-500/20',
-    features: ['Coding Bootcamps', 'Design & UI/UX', 'Certification Ready'],
-    badge: null,
-  },
-  {
-    icon: HiShieldCheck,
-    title: 'Cybersecurity',
-    desc: 'NETWORK SECURITY AUDITS, PENETRATION TESTING, VULNERABILITY ASSESSMENTS, AND COMPLIANCE CONSULTING.',
-    gradient: 'from-red-600 to-rose-700',
-    shadow: 'shadow-red-500/20',
-    features: ['Pen Testing', 'Network Audit', 'Compliance Advisory'],
-    badge: null,
-  },
-  {
-    icon: FaRobot,
-    title: 'AI & Automation',
-    desc: 'AI-POWERED AUTOMATION SOLUTIONS, CHATBOTS, DATA ANALYTICS, AND MACHINE LEARNING INTEGRATION FOR YOUR BUSINESS.',
-    gradient: 'from-amber-500 to-orange-600',
-    shadow: 'shadow-amber-500/20',
-    features: ['AI Chatbots', 'Data Analytics', 'Workflow Automation'],
-    badge: 'New',
+    features: ['LAN/WAN Implementation', 'Wireless Optimization', 'Server Rack Architecture'],
+    badge: 'Infrastructure Ready',
+    type: 'network'
   },
 ];
 
 
+import Modal from '../../components/ui/Modal';
+import { db } from '../../core/firebase/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { toast } from 'react-toastify';
+
 const ServicesPage = () => {
   const navigate = useNavigate();
+  const [isRepairModalOpen, setIsRepairModalOpen] = useState(false);
+  const [repairForm, setRepairForm] = useState({
+    name: '',
+    contact: '',
+    deviceType: 'Laptop',
+    issue: '',
+    date: ''
+  });
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleRepairSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await addDoc(collection(db, 'service_requests'), {
+        ...repairForm,
+        type: 'repair',
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      toast.success('Repair request submitted! We will contact you shortly.');
+      setIsRepairModalOpen(false);
+      setRepairForm({ name: '', contact: '', deviceType: 'Laptop', issue: '', date: '' });
+    } catch (err) {
+      toast.error('Failed to submit request');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen overflow-hidden bg-white">
@@ -75,14 +108,16 @@ const ServicesPage = () => {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-100/50 blur-[120px] rounded-full" />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <motion.div {...fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8">
+          <motion.div {...fadeUp} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 shadow-sm group">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-xs font-black text-cyan-300 uppercase tracking-[0.3em]">Premium Services</span>
+            <span className="text-xs font-black text-cyan-300 tracking-[0.3em]">Premium Services</span>
           </motion.div>
-          <motion.h1 {...fadeUp} transition={{ delay: 0.1 }} className="text-5xl sm:text-6xl md:text-7xl font-black text-slate-900 tracking-tighter leading-tight uppercase mb-8">
-            What We <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600">Build</span>
+          <motion.h1 {...fadeUp} transition={{ delay: 0.1 }} className="text-6xl sm:text-7xl md:text-9xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-8">
+            What We <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600">Architect</span>
           </motion.h1>
-            FROM CUSTOM WEB & MOBILE DEVELOPMENT TO ACCOUNTING SOFTWARE, TRAINING PROGRAMS, AND AI AUTOMATION — WE DELIVER TECHNOLOGY THAT DRIVES REAL RESULTS.
+          <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="text-slate-500 text-lg max-w-3xl mx-auto font-bold leading-relaxed">
+            Professional excellence in business software training, technical maintenance, and global infrastructure.
+          </motion.p>
         </div>
       </section>
 
@@ -99,7 +134,14 @@ const ServicesPage = () => {
                 transition={{ delay: i * 0.08, duration: 0.5 }}
                 whileHover={{ y: -8, scale: 1.02 }}
                 className={`relative group rounded-[2.5rem] overflow-hidden bg-gradient-to-br ${s.gradient} shadow-2xl ${s.shadow} cursor-pointer`}
-                onClick={() => navigate('/contact')}
+                onClick={() => {
+                  if (s.type === 'maintenance') setIsRepairModalOpen(true);
+                  else if (['development', 'marketing', 'network'].includes(s.type)) {
+                    setSelectedService(s);
+                    setIsServiceModalOpen(true);
+                  }
+                  else navigate('/contact');
+                }}
               >
                 {/* Noise Texture */}
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
@@ -110,7 +152,7 @@ const ServicesPage = () => {
                 <div className="relative p-8">
                   {/* Badge */}
                   {s.badge && (
-                    <span className="absolute top-6 right-6 text-[9px] font-black uppercase tracking-widest bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white">
+                    <span className="absolute top-6 right-6 text-[9px] font-black tracking-widest bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full text-white">
                       {s.badge}
                     </span>
                   )}
@@ -120,11 +162,11 @@ const ServicesPage = () => {
                     <s.icon className="w-7 h-7 text-white" />
                   </div>
 
-                  <h3 className="text-2xl font-black text-white mb-3 tracking-tight uppercase">
+                  <h3 className="text-2xl font-black text-white mb-3 tracking-tight">
                     {s.title}
                   </h3>
-                  <p className="text-blue-100/80 text-sm leading-relaxed mb-8 font-black uppercase italic">
-                    "{s.desc}"
+                  <p className="text-blue-100/90 text-sm leading-relaxed mb-8 font-medium">
+                    {s.desc}
                   </p>
 
                   {/* Features */}
@@ -217,6 +259,82 @@ const ServicesPage = () => {
           </motion.div>
         </div>
       </section>
+      {/* Repair Request Modal */}
+      <Modal 
+        isOpen={isRepairModalOpen} 
+        onClose={() => setIsRepairModalOpen(false)} 
+        title="Initialize Repair Protocol"
+      >
+        <form onSubmit={handleRepairSubmit} className="space-y-5 p-2">
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Technician Identity / Name</label>
+            <input 
+              required
+              type="text" 
+              value={repairForm.name}
+              onChange={e => setRepairForm({...repairForm, name: e.target.value})}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+              placeholder="Full Name"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Contact Frequency / Phone</label>
+            <input 
+              required
+              type="text" 
+              value={repairForm.contact}
+              onChange={e => setRepairForm({...repairForm, contact: e.target.value})}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+              placeholder="09..."
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Device Type</label>
+            <select 
+              value={repairForm.deviceType}
+              onChange={e => setRepairForm({...repairForm, deviceType: e.target.value})}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold outline-none"
+            >
+              <option>Laptop</option>
+              <option>Desktop</option>
+              <option>Server / Server Rack</option>
+              <option>Network Equipment</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Issue Description</label>
+            <textarea 
+              required
+              rows="3"
+              value={repairForm.issue}
+              onChange={e => setRepairForm({...repairForm, issue: e.target.value})}
+              className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3 font-bold focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none"
+              placeholder="Describe the technical fault..."
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50"
+          >
+            {loading ? 'Transmitting...' : 'Submit Service Request'}
+          </button>
+        </form>
+      </Modal>
+      <Modal 
+        isOpen={isServiceModalOpen} 
+        onClose={() => setIsServiceModalOpen(false)} 
+        title={`Ordering: ${selectedService?.title}`}
+        maxWidth="max-w-2xl"
+      >
+        {selectedService && (
+          <ServiceOrderForm 
+            service={selectedService} 
+            onClose={() => setIsServiceModalOpen(false)} 
+          />
+        )}
+      </Modal>
     </div>
   );
 };
